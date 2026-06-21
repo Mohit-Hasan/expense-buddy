@@ -6,6 +6,7 @@ test('admin can login and logout', async ({ page }) => {
     await expect(page.getByText('Test Admin').first()).toBeVisible();
 
     page.once('dialog', (dialog) => dialog.accept());
+    await page.locator('#profile-menu-toggle').click();
     await page.getByRole('button', { name: 'Logout' }).click();
     await expect(page).toHaveURL(/\/login$/);
 });

@@ -35,6 +35,38 @@ document.getElementById('mobile-sidebar-backdrop')?.addEventListener('click', ()
     document.getElementById('mobile-sidebar-backdrop')?.classList.add('hidden');
 });
 
+const profileMenu = document.getElementById('profile-menu');
+const profileMenuToggle = document.getElementById('profile-menu-toggle');
+const profileMenuPanel = document.getElementById('profile-menu-panel');
+
+function closeProfileMenu() {
+    profileMenuPanel?.classList.add('hidden');
+    profileMenuToggle?.setAttribute('aria-expanded', 'false');
+}
+
+profileMenuToggle?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const isOpen = !profileMenuPanel?.classList.contains('hidden');
+    if (isOpen) {
+        closeProfileMenu();
+    } else {
+        profileMenuPanel?.classList.remove('hidden');
+        profileMenuToggle?.setAttribute('aria-expanded', 'true');
+    }
+});
+
+document.addEventListener('click', (event) => {
+    if (profileMenu && !profileMenu.contains(event.target)) {
+        closeProfileMenu();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        closeProfileMenu();
+    }
+});
+
 export function chartColors() {
     const isDark = document.documentElement.classList.contains('dark');
 

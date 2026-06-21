@@ -64,14 +64,7 @@
                             <x-ming-icon name="weather.sun" class="h-5 w-5 dark:hidden" />
                             <x-ming-icon name="weather.moon" class="hidden h-5 w-5 dark:block" />
                         </button>
-                        <div class="hidden text-right sm:block">
-                            <div class="text-sm font-medium">{{ auth()->user()?->name }}</div>
-                            <div class="text-xs text-slate-500">{{ auth()->user()?->email }}</div>
-                        </div>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="btn-secondary">Logout</button>
-                        </form>
+                        <x-profile-menu />
                     </div>
                 </div>
             </header>
