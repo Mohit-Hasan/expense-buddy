@@ -2,8 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, dev]
   pull_request:
+    branches: [main, master, dev]
 
 jobs:
   phpunit:
@@ -47,11 +48,15 @@ jobs:
         with:
           node-version: '20'
           cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         run: |
           composer install --no-interaction --prefer-dist
-          npm ci
+          node --version
+          npm --version
+          npm install --package-lock-only --no-audit --no-fund
+          npm ci --no-audit --no-fund
 
       - name: Prepare environment
         run: |
@@ -70,7 +75,11 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
 
       - name: Run Playwright install wizard test
-        run: PLAYWRIGHT_INCLUDE_INSTALL=1 npx playwright test e2e/00-install.spec.ts
+        run: |
+          cp .env.testing .env
+          rm -f storage/installed database/database.sqlite
+          : > database/testing.sqlite
+          PLAYWRIGHT_INCLUDE_INSTALL=1 npx playwright test e2e/00-install.spec.ts
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
 

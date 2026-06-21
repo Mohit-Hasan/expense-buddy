@@ -38,15 +38,9 @@
 
     @if ($adminRoute !== null)
         <div class="px-3 pb-1 pt-5 text-[11px] font-bold uppercase tracking-widest text-slate-400">System</div>
-        <a href="{{ route($adminRoute) }}" class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}">
+        <a href="{{ route($adminRoute) }}" class="nav-link {{ request()->routeIs('admin.*') || request()->routeIs('account.*') ? 'active' : '' }}">
             <x-ming-icon name="system.settings-1" class="h-5 w-5 shrink-0" />
             <span>Administration</span>
         </a>
     @endif
-
-    <div class="px-3 pb-1 pt-5 text-[11px] font-bold uppercase tracking-widest text-slate-400">Account</div>
-    <a href="{{ route('account.security') }}" class="nav-link {{ request()->routeIs('account.*') ? 'active' : '' }}">
-        <x-ming-icon name="user.user-security" class="h-5 w-5 shrink-0" />
-        <span>Security</span>
-    </a>
 </nav>

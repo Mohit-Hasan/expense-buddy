@@ -1,12 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { admin, loginAsAdmin } from './helpers';
+import { admin, loginAsAdmin, logoutViaProfileMenu } from './helpers';
 
 test('admin can login and logout', async ({ page }) => {
     await loginAsAdmin(page);
     await expect(page.getByText('Test Admin').first()).toBeVisible();
 
-    page.once('dialog', (dialog) => dialog.accept());
-    await page.getByRole('button', { name: 'Logout' }).click();
+    await logoutViaProfileMenu(page);
     await expect(page).toHaveURL(/\/login$/);
 });
 

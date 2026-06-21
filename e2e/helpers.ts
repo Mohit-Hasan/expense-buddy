@@ -14,6 +14,17 @@ export async function loginAsAdmin(page: Page): Promise<void> {
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
 }
 
+/** Page @section('actions') buttons are rendered twice (header + mobile main). Scope to header. */
+export async function clickPageAction(page: Page, name: string): Promise<void> {
+    await page.getByRole('banner').getByRole('button', { name }).click();
+}
+
+export async function logoutViaProfileMenu(page: Page): Promise<void> {
+    await page.locator('#profile-menu-toggle').click();
+    await expect(page.locator('#profile-menu-panel')).toBeVisible();
+    await page.locator('#profile-menu-panel').getByRole('menuitem', { name: 'Logout' }).click();
+}
+
 export const authenticatedRoutes = [
     '/',
     '/transactions',

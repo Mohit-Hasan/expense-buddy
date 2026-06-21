@@ -8,8 +8,14 @@
     ));
 @endphp
 
-@if ($adminItems !== [])
+@if ($adminItems !== [] || auth()->check())
     <div class="mb-6 flex flex-wrap gap-2 border-b border-slate-200 pb-4 dark:border-slate-800">
+        <a href="{{ route('account.security') }}"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition {{ request()->routeIs('account.*') ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800' }}">
+            <x-ming-icon name="user.user-security" class="h-4 w-4" />
+            Security
+        </a>
+
         @foreach ($adminItems as $tab)
             <a href="{{ route($tab['route']) }}"
                class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition {{ request()->routeIs($tab['active']) ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800' }}">

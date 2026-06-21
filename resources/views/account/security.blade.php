@@ -1,10 +1,12 @@
 @extends('layouts.app')
 
-@section('title', 'Account Security')
-@section('heading', 'Account Security')
-@section('subheading', 'Two-factor authentication and sign-in protection')
+@section('title', 'Security')
+@section('heading', 'Administration')
+@section('subheading', 'Security and two-factor authentication')
 
 @section('content')
+    @include('admin.partials.nav')
+
     <div class="grid gap-6 lg:grid-cols-2">
         <x-panel title="Two-Factor Authentication (2FA)" subtitle="Protect your account with an authenticator app">
             @if ($user->hasTwoFactorEnabled())
