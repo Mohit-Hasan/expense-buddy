@@ -6,6 +6,7 @@ import { test, expect } from '@playwright/test';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const logoPath = path.join(root, 'e2e/fixtures/logo.png');
+const testingDb = path.join(root, 'database/testing.sqlite');
 
 const installAdmin = {
     name: 'E2E Install Admin',
@@ -16,11 +17,22 @@ const installAdmin = {
 test.describe.configure({ mode: 'serial' });
 
 test.beforeAll(() => {
-    const testingDb = path.join(root, 'database/testing.sqlite');
+    const envTesting = path.join(root, '.env.testing');
+    const envFile = path.join(root, '.env');
+    if (fs.existsSync(envTesting)) {
+        fs.copyFileSync(envTesting, envFile);
+    }
+
+    const lock = path.join(root, 'storage/installed');
+    if (fs.existsSync(lock)) {
+        fs.unlinkSync(lock);
+    }
+
+    fs.mkdirSync(path.join(root, 'database'), { recursive: true });
     if (fs.existsSync(testingDb)) {
         fs.unlinkSync(testingDb);
-        fs.closeSync(fs.openSync(testingDb, 'w'));
     }
+    fs.closeSync(fs.openSync(testingDb, 'w'));
 
     execSync('php artisan expensebuddy:prepare-e2e --uninstalled', {
         cwd: root,
@@ -35,7 +47,7 @@ test.beforeAll(() => {
 });
 
 test('fresh install wizard completes successfully', async ({ page, baseURL }) => {
-    test.setTimeout(180_000);
+    test.setTimeout(120_000);
     await page.goto('/install/');
     await expect(page.getByRole('heading', { name: 'Server requirements' })).toBeVisible();
     await page.getByRole('link', { name: 'Continue to database' }).click();
@@ -56,9 +68,15 @@ test('fresh install wizard completes successfully', async ({ page, baseURL }) =>
     await page.locator('#currency_name').fill('US Dollar');
     await page.locator('#currency_code').fill('USD');
     await page.locator('#currency_symbol').fill('$');
+
+    const reinstall = page.locator('input[name="confirm_reinstall"]');
+    if (await reinstall.isVisible()) {
+        await reinstall.check();
+    }
+
     await page.getByRole('button', { name: 'Run installation' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Installation complete' })).toBeVisible({ timeout: 180_000 });
+    await expect(page.getByRole('heading', { name: 'Installation complete' })).toBeVisible({ timeout: 120_000 });
     await page.getByRole('link', { name: 'Open ExpenseBuddy login' }).click();
 
     await page.locator('#email').fill(installAdmin.email);

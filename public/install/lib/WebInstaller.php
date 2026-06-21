@@ -34,9 +34,7 @@ final class WebInstaller
         }
 
         try {
-            $app = $this->bootstrapLaravel();
-
-            return AppInstall::isInstalled();
+            return $this->databaseHasAdminUser();
         } catch (Throwable) {
             return false;
         }
@@ -98,7 +96,7 @@ final class WebInstaller
     {
         $logs = [];
 
-        if (($payload['confirm_reinstall'] ?? '') !== '1' && $this->isInstalled()) {
+        if (($payload['confirm_reinstall'] ?? '') !== '1' && is_file($this->basePath.'/storage/installed')) {
             throw new RuntimeException('Application is already installed. Enable fresh reinstall to continue.');
         }
 
@@ -111,6 +109,8 @@ final class WebInstaller
         $this->ensureStorageLink();
 
         $logs[] = 'Preparing database (fresh install)…';
+        chdir($this->basePath);
+        $this->reloadEnvironmentForInstall();
         $app = $this->bootstrapLaravel();
         Artisan::call('migrate:fresh', ['--force' => true]);
         $logs[] = trim(Artisan::output()) ?: 'Migrations completed.';
@@ -234,6 +234,22 @@ final class WebInstaller
         }
     }
 
+    private function reloadEnvironmentForInstall(): void
+    {
+        foreach (array_keys($_ENV) as $key) {
+            if (str_starts_with($key, 'APP_')
+                || str_starts_with($key, 'DB_')
+                || str_starts_with($key, 'LOG_')
+                || str_starts_with($key, 'SESSION_')
+                || str_starts_with($key, 'CACHE_')
+                || str_starts_with($key, 'QUEUE_')
+                || str_starts_with($key, 'LEDGER_')) {
+                putenv($key);
+                unset($_ENV[$key], $_SERVER[$key]);
+            }
+        }
+    }
+
     private function bootstrapLaravel(): \Illuminate\Foundation\Application
     {
         require_once $this->basePath.'/vendor/autoload.php';
@@ -242,5 +258,79 @@ final class WebInstaller
         $app->make(Kernel::class)->bootstrap();
 
         return $app;
+    }
+
+    private function databaseHasAdminUser(): bool
+    {
+        $driver = $this->readEnvValue('DB_CONNECTION') ?? 'sqlite';
+
+        if ($driver !== 'sqlite') {
+            return false;
+        }
+
+        $database = $this->readEnvValue('DB_DATABASE');
+
+        if ($database === null || $database === '') {
+            return false;
+        }
+
+        $path = str_starts_with($database, '/')
+            ? $database
+            : $this->basePath.'/'.ltrim($database, '/');
+
+        if (! is_file($path)) {
+            return false;
+        }
+
+        $pdo = new PDO('sqlite:'.$path);
+        $hasUsersTable = (bool) $pdo->query(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users' LIMIT 1",
+        )->fetchColumn();
+
+        if (! $hasUsersTable) {
+            return false;
+        }
+
+        return (int) $pdo->query('SELECT COUNT(*) FROM users')->fetchColumn() > 0;
+    }
+
+    private function readEnvValue(string $key): ?string
+    {
+        $envPath = $this->basePath.'/.env';
+
+        if (! is_file($envPath)) {
+            return null;
+        }
+
+        $lines = file($envPath, FILE_IGNORE_NEW_LINES);
+
+        if ($lines === false) {
+            return null;
+        }
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#') || ! str_contains($line, '=')) {
+                continue;
+            }
+
+            [$envKey, $value] = explode('=', $line, 2);
+
+            if (trim($envKey) !== $key) {
+                continue;
+            }
+
+            $value = trim($value);
+
+            if ((str_starts_with($value, '"') && str_ends_with($value, '"'))
+                || (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
+                $value = substr($value, 1, -1);
+            }
+
+            return $value;
+        }
+
+        return null;
     }
 }

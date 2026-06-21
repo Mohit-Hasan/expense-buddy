@@ -127,9 +127,14 @@ $reqPassed = $requirements->passed();
 $complete = (bool) ($_SESSION['install_complete'] ?? false);
 
 if ($step === 5 && ! $complete) {
-    header('Location: '.INSTALL_BASE.'?step=1');
+    if ($installer->isInstalled()) {
+        $_SESSION['install_complete'] = true;
+        $complete = true;
+    } else {
+        header('Location: '.INSTALL_BASE.'?step=1');
 
-    exit;
+        exit;
+    }
 }
 
 $defaultUrl = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http')

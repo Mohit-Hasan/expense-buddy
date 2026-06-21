@@ -75,7 +75,11 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
 
       - name: Run Playwright install wizard test
-        run: PLAYWRIGHT_INCLUDE_INSTALL=1 npx playwright test e2e/00-install.spec.ts
+        run: |
+          cp .env.testing .env
+          rm -f storage/installed database/database.sqlite
+          : > database/testing.sqlite
+          PLAYWRIGHT_INCLUDE_INSTALL=1 npx playwright test e2e/00-install.spec.ts
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
 

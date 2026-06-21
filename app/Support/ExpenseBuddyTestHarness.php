@@ -62,6 +62,11 @@ final class ExpenseBuddyTestHarness
     {
         AppInstall::clearLock();
         Artisan::call('migrate:fresh', ['--force' => true]);
+
+        $databaseSqlite = database_path('database.sqlite');
+        if (is_file($databaseSqlite)) {
+            unlink($databaseSqlite);
+        }
     }
 
     public static function seedMinimalLedgerFixtures(): void
