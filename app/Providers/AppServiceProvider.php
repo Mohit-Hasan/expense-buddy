@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Providers;
+
+use App\Models\SystemSetting;
+use App\Support\MoneyFormatter;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        //
+    }
+
+    public function boot(): void
+    {
+        Paginator::defaultView('vendor.pagination.tailwind');
+
+        $settings = null;
+
+        if (Schema::hasTable('system_settings')) {
+            $settings = SystemSetting::query()->with('defaultCurrency')->first();
+
+            if ($settings !== null) {
+                config(['ledger.allow_negative_balances' => $settings->allow_negative_balances]);
+            }
+        }
+
+        $baseCurrency = $settings?->defaultCurrency ?? MoneyFormatter::baseCurrency();
+
+        View::share([
+            'systemSettings' => $settings,
+            'baseCurrency' => $baseCurrency,
+        ]);
+    }
+}
