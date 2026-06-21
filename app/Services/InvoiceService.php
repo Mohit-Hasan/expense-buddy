@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\SystemSetting;
 use App\Models\Transaction;
 use App\Models\TransactionInvoice;
+use App\Support\Brand;
 use App\Support\MoneyFormatter;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Schema;
@@ -81,7 +82,7 @@ class InvoiceService
         return [
             'invoice' => $invoice,
             'transaction' => $invoice->transaction,
-            'systemName' => $settings?->system_name ?? 'Ledger Engine',
+            'systemName' => Brand::appName($settings),
             'baseCurrency' => MoneyFormatter::baseCurrency(),
         ];
     }

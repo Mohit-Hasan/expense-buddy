@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login — Expense Manager</title>
+    <title>Login — {{ \App\Support\Brand::appName($systemSettings) }}</title>
+    <x-pwa-meta />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -14,10 +15,30 @@
     <div class="w-full max-w-md">
         <div class="card overflow-hidden shadow-card-hover">
             <div class="bg-gradient-to-r from-brand-600 to-brand-700 px-8 py-8 text-white">
-                <h1 class="text-2xl font-bold">{{ $systemSettings?->system_name ?? 'Ledger Engine' }}</h1>
-                <p class="mt-1 text-sm text-brand-100">Multi-currency income & expense management</p>
+                <div class="flex items-center gap-4">
+                    @php
+                        $brandLogo = \App\Support\Brand::logoUrl($systemSettings);
+                    @endphp
+                    @if ($brandLogo)
+                        <img src="{{ $brandLogo }}" alt="" class="h-12 w-12 rounded-xl bg-white/10 object-contain p-1">
+                    @else
+                        <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 text-lg font-bold">EB</div>
+                    @endif
+                    <div>
+                        <h1 class="text-2xl font-bold">{{ \App\Support\Brand::appName($systemSettings) }}</h1>
+                        <p class="mt-1 text-sm text-brand-100">{{ \App\Support\Brand::tagline() }}</p>
+                    </div>
+                </div>
             </div>
             <div class="p-8">
+                <x-pwa-install-banner />
+
+                @if (session('success'))
+                    <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+                        {{ session('success') }}
+                    </div>
+                @endif
+
                 @if ($errors->any())
                     <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200">
                         {{ $errors->first() }}
@@ -40,7 +61,6 @@
                     </label>
                     <button type="submit" class="btn-primary w-full">Sign In</button>
                 </form>
-                <p class="mt-6 text-center text-xs text-slate-400">Demo: admin@ledger.local / password</p>
             </div>
         </div>
     </div>

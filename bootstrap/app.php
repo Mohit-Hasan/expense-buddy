@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo('/login');
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureInstalled::class,
+        ]);
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdministrator::class,
             'menu.permission' => \App\Http\Middleware\EnsureMenuPermission::class,

@@ -4,6 +4,10 @@ import { initSearchSelects } from './searchSelect';
 import { initConfirmModal } from './confirmModal';
 import './formModal';
 import { initTransactionForm } from './transactionForm';
+import { initPwaInstall, registerServiceWorker } from './pwaInstall';
+
+registerServiceWorker();
+initPwaInstall();
 
 window.Chart = Chart;
 window.initSearchSelects = initSearchSelects;

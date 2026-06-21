@@ -1,14 +1,13 @@
 {
-    "name": "expense-manager/ledger-engine",
+    "name": "expensebuddy/expensebuddy",
     "type": "project",
-    "description": "Financial Ledger Engine - Income & Expense Manager",
-    "keywords": ["laravel", "ledger", "finance"],
+    "description": "ExpenseBuddy — Your Personal Finance Companion. Multi-currency income, expense, lending & invoice manager built with Laravel.",
+    "keywords": ["laravel", "expense-manager", "finance", "ledger", "pwa"],
     "license": "MIT",
     "require": {
         "php": "^8.3",
         "barryvdh/laravel-dompdf": "^3.1",
         "blade-ui-kit/blade-icons": "^1.10",
-        "chrisoprea/blade-mingcute-icons": "^1.0",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0"
     },
@@ -17,7 +16,7 @@
         "laravel/pint": "^1.24",
         "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^9.0",
+        "nunomaduro/collision": "^8.6",
         "phpunit/phpunit": "^12.0"
     },
     "autoload": {

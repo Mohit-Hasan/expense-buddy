@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Currency;
 use App\Models\SystemSetting;
+use App\Support\Brand;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +24,7 @@ class SystemSettingService
                 ?? Currency::query()->orderBy('id')->first();
 
             $settings = SystemSetting::query()->create([
-                'system_name' => 'Ledger Engine',
+                'system_name' => Brand::name(),
                 'default_currency_id' => $defaultCurrency?->id,
                 'allow_negative_balances' => (bool) config('ledger.allow_negative_balances', false),
             ]);

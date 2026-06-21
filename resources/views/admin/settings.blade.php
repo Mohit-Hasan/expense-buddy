@@ -20,6 +20,7 @@
 
                 <div>
                     <label class="mb-1.5 block text-sm font-medium">System Logo</label>
+                    <p class="mb-2 text-xs text-slate-500">Used in the sidebar, browser tab favicon, and mobile PWA install icon.</p>
                     @if ($settings->system_logo)
                         <div class="mb-3 flex items-center gap-3">
                             <img src="{{ asset('storage/'.$settings->system_logo) }}" alt="Logo" class="h-12 w-12 rounded-xl border object-contain p-1 dark:border-slate-700">

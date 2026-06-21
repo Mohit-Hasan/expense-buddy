@@ -1,6 +1,8 @@
 @php
-    $brandName = $systemSettings?->system_name ?? 'Ledger Engine';
-    $brandLogo = $systemSettings?->system_logo ? asset('storage/'.$systemSettings->system_logo) : null;
+    use App\Support\Brand;
+
+    $brandName = Brand::appName($systemSettings);
+    $brandLogo = Brand::logoUrl($systemSettings);
 @endphp
 
 <div class="flex items-center gap-3">

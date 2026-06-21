@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::create('system_settings', function (Blueprint $table): void {
             $table->id();
-            $table->string('system_name')->default('Ledger Engine');
+            $table->string('system_name')->default('ExpenseBuddy');
             $table->string('system_logo')->nullable();
             $table->foreignId('default_currency_id')
                 ->nullable()
