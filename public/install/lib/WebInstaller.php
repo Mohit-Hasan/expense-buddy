@@ -88,7 +88,7 @@ final class WebInstaller
             throw new RuntimeException('Application is already installed. Enable fresh reinstall to continue.');
         }
 
-        AppInstall::clearLock();
+        $this->clearInstallLock();
 
         $logs[] = 'Creating .env file…';
         $this->writeEnvironment($payload);
@@ -204,6 +204,15 @@ final class WebInstaller
 
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             exec('mklink /J '.escapeshellarg($link).' '.escapeshellarg($target));
+        }
+    }
+
+    private function clearInstallLock(): void
+    {
+        $lock = $this->basePath.'/storage/installed';
+
+        if (is_file($lock)) {
+            unlink($lock);
         }
     }
 

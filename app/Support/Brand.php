@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Models\SystemSetting;
+use Illuminate\Support\Facades\Storage;
 
 final class Brand
 {
@@ -28,12 +29,21 @@ final class Brand
         return $settings?->system_name ?? self::name();
     }
 
-    public static function logoUrl(?SystemSetting $settings = null): ?string
+    public static function hasLogo(?SystemSetting $settings = null): bool
     {
-        if ($settings?->system_logo) {
-            return asset('storage/'.$settings->system_logo);
+        if ($settings?->system_logo === null || $settings->system_logo === '') {
+            return false;
         }
 
-        return null;
+        return Storage::disk('public')->exists($settings->system_logo);
+    }
+
+    public static function logoUrl(?SystemSetting $settings = null): ?string
+    {
+        if (! self::hasLogo($settings)) {
+            return null;
+        }
+
+        return asset('storage/'.$settings->system_logo);
     }
 }

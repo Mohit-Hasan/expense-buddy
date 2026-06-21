@@ -62,13 +62,17 @@ final class MoneyFormatter
 
     public static function baseCurrency(): ?Currency
     {
-        $settings = SystemSetting::query()->with('defaultCurrency')->first();
+        try {
+            $settings = SystemSetting::query()->with('defaultCurrency')->first();
 
-        if ($settings?->defaultCurrency !== null) {
-            return $settings->defaultCurrency;
+            if ($settings?->defaultCurrency !== null) {
+                return $settings->defaultCurrency;
+            }
+
+            return Currency::query()->where('is_default', true)->first()
+                ?? Currency::query()->orderBy('id')->first();
+        } catch (\Throwable) {
+            return null;
         }
-
-        return Currency::query()->where('is_default', true)->first()
-            ?? Currency::query()->orderBy('id')->first();
     }
 }

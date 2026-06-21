@@ -382,6 +382,10 @@ function stepClass(int $current, int $target): string
 
                 <?php if ($logs !== []): ?>
                     <div class="log-box"><?= h(implode("\n", $logs)) ?></div>
+                <?php elseif ($errors !== []): ?>
+                    <div class="actions">
+                        <a class="btn btn-secondary" href="<?= INSTALL_BASE ?>?step=3">Back to application setup</a>
+                    </div>
                 <?php else: ?>
                     <form method="POST" action="<?= INSTALL_BASE ?>" id="run-form">
                         <input type="hidden" name="step" value="4">

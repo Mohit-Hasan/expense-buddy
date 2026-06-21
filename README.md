@@ -130,6 +130,47 @@ php artisan db:seed --class=DemoDataSeeder
 
 ---
 
+## Testing (local & CI)
+
+### Quick commands
+
+```bash
+# PHPUnit only (13 tests — unit + feature + route smoke)
+composer test
+
+# Playwright app flows (login, all routes, create data)
+npm run test:e2e
+
+# Playwright fresh install wizard (optional)
+npm run test:e2e:install
+
+# Full local gate before pushing (PHPUnit + build + Playwright)
+composer test:all
+# or
+bash scripts/test-local.sh
+```
+
+### What is covered
+
+| Suite | Covers |
+|-------|--------|
+| **PHPUnit** | Brand/install helpers, install service, login, admin route smoke (every main GET route), create account/category/transaction |
+| **Playwright** | Admin login/logout, visit all feature pages, PWA manifest, create account/category/transaction/contact |
+| **Playwright install** | Full `/install/` wizard on a fresh SQLite database |
+
+GitHub Actions runs **PHPUnit** and **Playwright** automatically on push/PR (`.github/workflows/tests.yml`).
+
+### First-time Playwright setup
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+Tests start a local server on **`http://127.0.0.1:8765`** (with `--no-reload` so the installer can rewrite `.env` safely).
+
+---
+
 ## Configuration (after install)
 
 Most settings are in **Admin → Settings** inside the app.

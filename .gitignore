@@ -6,6 +6,8 @@
 .env.production
 .phpunit.result.cache
 /database/database.sqlite
+/database/testing.sqlite
+.phpunit.cache
 Homestead.json
 Homestead.yaml
 auth.json
@@ -15,3 +17,5 @@ yarn-error.log
 /.idea
 /.vscode
 /node_modules
+/playwright-report/
+/test-results/

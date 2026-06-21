@@ -23,16 +23,22 @@ class AppServiceProvider extends ServiceProvider
         Paginator::defaultView('vendor.pagination.tailwind');
 
         $settings = null;
+        $baseCurrency = null;
 
-        if (Schema::hasTable('system_settings')) {
-            $settings = SystemSetting::query()->with('defaultCurrency')->first();
+        try {
+            if (Schema::hasTable('system_settings')) {
+                $settings = SystemSetting::query()->with('defaultCurrency')->first();
 
-            if ($settings !== null) {
-                config(['ledger.allow_negative_balances' => $settings->allow_negative_balances]);
+                if ($settings !== null) {
+                    config(['ledger.allow_negative_balances' => $settings->allow_negative_balances]);
+                }
             }
-        }
 
-        $baseCurrency = $settings?->defaultCurrency ?? MoneyFormatter::baseCurrency();
+            $baseCurrency = $settings?->defaultCurrency ?? MoneyFormatter::baseCurrency();
+        } catch (\Throwable) {
+            $settings = null;
+            $baseCurrency = null;
+        }
 
         View::share([
             'systemSettings' => $settings,
