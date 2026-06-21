@@ -11,12 +11,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         if (filter_var(env('SEED_DEMO_DATA', false), FILTER_VALIDATE_BOOL)) {
-            $this->call(DemoSeeder::class);
+            $this->command?->warn('SEED_DEMO_DATA only loads sample accounts/categories. Run the web installer at /install/ for a full setup.');
+            $this->call(DemoDataSeeder::class);
 
             return;
         }
 
-        $this->command?->info('No seed data loaded. Visit /install in your browser to set up ExpenseBuddy.');
-        $this->command?->info('Optional demo dataset: SEED_DEMO_DATA=true php artisan db:seed');
+        $this->command?->info('No data seeded. Open /install/ in your browser to set up ExpenseBuddy.');
     }
 }

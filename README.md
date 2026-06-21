@@ -2,245 +2,158 @@
 
 **Your Personal Finance Companion**
 
-ExpenseBuddy is a self-hosted, multi-currency income and expense manager built with Laravel 13. Track accounts, transactions, lending, invoices, and analytics from a clean dashboard — with role-based access, PDF invoices, and installable PWA support for mobile.
-
-![PHP](https://img.shields.io/badge/PHP-8.3+-777BB4?logo=php&logoColor=white)
-![Laravel](https://img.shields.io/badge/Laravel-13.x-FF2D20?logo=laravel&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
+ExpenseBuddy helps you track income, expenses, accounts, and cash flow in one place — with multi-currency support, clear reports, and a mobile-friendly installable app.
 
 ---
 
-## Features
+## What you can do
 
-### Core ledger
-- **Dashboard** — income, expense, net balance, cash assets, and a 6-month trend chart
-- **Transactions** — income, expense, and transfer entries with categories, payment methods, contacts, attachments, and multi-currency rates
-- **Accounts** — multi-currency wallets/bank accounts with live balances
-- **Transfers** — atomic double-entry style transfers between accounts
+### Money in & out
+- Record **income** and **expense** transactions with amount, date, category, and payment method
+- Attach notes, references, and files to any transaction
+- See totals on the dashboard: income, expense, net balance, and cash on hand
 
-### Lending & contacts
-- **People & companies** — track lenders, borrowers, customers, and vendors
-- **Lending overview** — balances owed to you and by you
-- **Contact ledger** — chronological history per contact
+### Accounts & transfers
+- Create **bank, cash, or wallet accounts** in different currencies
+- Move money between accounts with **transfers** (balances update automatically)
+- Optional rule to block spending below zero balance
 
-### Invoicing
+### Categories & reports
+- Organize spending with **income/expense categories**
+- **Detailed analytics** with charts by category, month, and time
+- **Income vs expense** summary and categorized breakdown reports
+
+### Invoices
 - Generate **PDF invoices** from transactions
-- **Shareable public links** for clients (`/i/{token}`)
-- Branded with your system name and logo
+- Share a **public link** with clients
 
-### Analytics & reports
-- **Detailed analytics** — category, time, and month breakdowns with charts
-- **Income vs expense** — month-over-month comparison
-- **Categorized reports** — spending and income by category
+### Multi-currency
+- Set a **base currency** during installation
+- Add more currencies with exchange rates
+- Enter transactions in the account currency with rate at time of entry
 
-### Administration
-- **System settings** — app name, logo (favicon + PWA icon), base currency, negative balance policy
-- **Users & roles** — create users and assign roles
-- **Menu permissions** — control sidebar access per role (16 granular permissions)
-- **Category management** — income/expense categories with archive/restore
-- **Currency management** — multiple currencies with exchange rates
-- **Database backup** — download a SQL snapshot from the admin panel
+### Team & settings
+- **Administrator account** created during install
+- **Users & roles** with per-menu permissions
+- Upload your **logo** — used in the app, browser favicon, and mobile home-screen icon
+- **PWA install** prompt on login for Chrome / mobile
 
-### UX & mobile
-- **Dark / light mode** with persistence
-- **Responsive layout** — desktop sidebar + mobile bottom nav
-- **Searchable selects**, modal forms, and confirmation dialogs
-- **PWA install** — add to home screen from the login page (Chrome) with your uploaded logo as the app icon
+### Lending (optional module)
+- Track people and companies you lend to or borrow from
+- Lending overview and per-contact ledger
 
 ---
 
-## Tech stack
+## Install on a live server (upload ZIP)
 
-| Layer | Technology |
-|-------|------------|
-| Backend | Laravel 13, PHP 8.3+ |
-| Database | SQLite (default) or MySQL 8+ |
-| Frontend | Blade, Tailwind CSS 3, Vite |
-| Charts | Chart.js |
-| PDF | DomPDF |
-| Icons | MingCute (local SVG set) |
+The package is ready to upload **with `vendor/` and built frontend assets included**. No Composer or npm commands are required on the server.
 
-Architecture follows **Controller → Service → Repository** with strict typing, `decimal(15,4)` for money, and database transactions for balance mutations.
+### 1. Upload files
+1. Download or zip the full project folder
+2. Upload to your hosting (cPanel, FTP, etc.)
+3. Point your domain document root to the **`/public`** folder
 
----
+### 2. Folder permissions
+Make sure these are writable by PHP:
+- `/storage`
+- `/bootstrap/cache`
+- project root (so `.env` can be created)
 
-## Requirements
+### 3. Create database (MySQL)
+In your hosting panel, create:
+- A MySQL database
+- A database user with full access to that database
 
-- PHP **8.3+** with extensions: `pdo`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `fileinfo`, `gd`
-- Composer 2.x
-- Node.js **18+** and npm (for frontend assets)
-- SQLite **or** MySQL 8+
+### 4. Run the web installer
+Open in your browser:
 
----
-
-## Installation
-
-### 1. Clone and install dependencies
-
-```bash
-git clone https://github.com/your-username/expensebuddy.git
-cd expensebuddy
-
-composer install
-npm install
-npm run build
+```
+https://yourdomain.com/install/
 ```
 
-### 2. Environment
+Follow the 4 steps:
+
+| Step | What it does |
+|------|----------------|
+| **Requirements** | Checks PHP version, extensions, vendor folder, writable folders |
+| **Database** | MySQL credentials + your site URL → creates `.env` automatically |
+| **Application** | Admin login, app name, logo, base currency, demo data on/off |
+| **Finish** | Runs fresh migration, storage link, and setup |
+
+**Install options:**
+- **Without demo data** — clean ledger; you add your own accounts and categories
+- **With demo data** — sample accounts, categories, payment methods, and contacts (your admin login is still the one you enter)
+
+Every install runs a **fresh database migration** so you always start clean.
+
+### 5. After install
+1. Log in at `https://yourdomain.com/login`
+2. **Delete the `/public/install` folder** from your server for security
+
+---
+
+## Install locally
+
+Same web installer — no terminal setup required if `vendor/` is included.
+
+1. Place the project folder on your machine
+2. Start PHP built-in server from the project root:
 
 ```bash
+php artisan serve
+```
+
+3. Open `http://127.0.0.1:8000/install/`
+4. Choose **SQLite** on the database step for the quickest local test
+5. Complete the wizard and log in
+
+---
+
+## Optional: developer setup from source
+
+If you clone from GitHub without `vendor/`:
+
+```bash
+composer install
+npm install && npm run build
 cp .env.example .env
 php artisan key:generate
 ```
 
-**SQLite (recommended for local use):**
+Then use `/install/` — the installer still creates `.env`, migrates, and links storage for you.
+
+To load demo sample data manually on an already-installed app:
 
 ```bash
-touch database/database.sqlite
-```
-
-Ensure `.env` contains:
-
-```env
-DB_CONNECTION=sqlite
-```
-
-**MySQL:** uncomment and set `DB_*` values in `.env`.
-
-### 3. Database & storage
-
-```bash
-php artisan migrate
-php artisan storage:link
-```
-
-> **No sample data is seeded by default.** You will configure everything through the web installer.
-
-### 4. Web installer
-
-Start the app:
-
-```bash
-php artisan serve
-```
-
-Open **`http://localhost:8000/install`** and complete the setup wizard:
-
-1. **Branding** — app name + logo (required; becomes favicon and PWA icon)
-2. **Administrator** — your login email and password
-3. **Base currency** — e.g. USD, BDT, EUR
-
-When finished, sign in at `/login`.
-
-### 5. Production checklist
-
-- Set `APP_ENV=production`, `APP_DEBUG=false`, and a real `APP_URL`
-- Use HTTPS (required for PWA install on mobile)
-- Point your web server document root to `/public`
-- Run `php artisan config:cache` and `php artisan route:cache`
-
----
-
-## Optional demo data
-
-For local demos only, on a **fresh empty database**:
-
-```bash
-SEED_DEMO_DATA=true php artisan db:seed --class=DemoSeeder
-```
-
-This creates sample accounts, categories, payment methods, contacts, and a demo admin:
-
-| Field | Value |
-|-------|-------|
-| Email | `admin@expensebuddy.test` |
-| Password | `password` |
-
-Upload a logo in **Admin → Settings** to set favicon and PWA icons when using demo seed.
-
----
-
-## Development
-
-```bash
-# Terminal 1
-php artisan serve
-
-# Terminal 2 — hot reload for CSS/JS
-npm run dev
-```
-
-Useful commands:
-
-```bash
-php artisan migrate:fresh          # reset database (re-run /install after)
-php artisan db:seed                # prints install instructions (no demo data)
-php artisan db:seed --class=MenuPermissionSeeder  # re-sync menu permissions
+php artisan db:seed --class=DemoDataSeeder
 ```
 
 ---
 
-## Configuration
+## Configuration (after install)
 
-| Variable | Description |
-|----------|-------------|
-| `APP_NAME` | Laravel app name (default: ExpenseBuddy) |
-| `APP_BRAND_NAME` | Default brand name before/without custom settings |
-| `APP_BRAND_TAGLINE` | Tagline shown on login and PWA manifest |
-| `LEDGER_ALLOW_NEGATIVE_BALANCES` | Allow expenses/transfers below zero balance |
-| `SEED_DEMO_DATA` | Set `true` when running `db:seed` to load demo dataset |
+Most settings are in **Admin → Settings** inside the app.
 
-Negative balance enforcement can also be toggled in **Admin → Settings**.
+Environment variables in `.env` (created by installer):
 
----
-
-## Project structure (high level)
-
-```
-app/
-├── Http/Controllers/     # Thin HTTP layer
-├── Http/Requests/        # Validation
-├── Models/               # Eloquent models
-├── Repositories/         # Data access
-├── Services/             # Business logic
-└── Support/              # Brand, permissions, formatters
-
-resources/views/          # Blade templates + components
-routes/web.php            # Web routes
-database/migrations/      # Schema
-public/                   # Web root, PWA assets, built frontend
-```
-
----
-
-## PWA & favicon
-
-- Upload your logo during **install** or in **Admin → Settings**
-- That image is used for:
-  - Browser tab favicon
-  - Apple touch icon
-  - PWA manifest icons (Chrome “Install app”)
-- On the login screen, users who have not installed the app see an **Install** prompt (Chrome) or iOS **Add to Home Screen** hint
+| Variable | Purpose |
+|----------|---------|
+| `APP_URL` | Your site URL |
+| `APP_DEBUG` | `false` on live servers |
+| `DB_*` | Database connection |
+| `LEDGER_ALLOW_NEGATIVE_BALANCES` | Allow spending below zero |
 
 ---
 
 ## Security notes
 
-- Change default credentials immediately in production
-- Installation is disabled once a user exists (visiting `/install` redirects to login)
+- Delete `/public/install` after successful setup
+- Use HTTPS on live sites (needed for mobile app install)
+- Use a strong administrator password
 - Keep `APP_DEBUG=false` in production
-- Review role permissions before adding team members
 
 ---
 
 ## License
 
 MIT
-
----
-
-## Contributing
-
-Issues and pull requests are welcome. Please open an issue before large changes.
-
-**Suggested roadmap:** recurring transactions, bank import (CSV), API tokens, two-factor auth.
