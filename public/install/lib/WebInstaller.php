@@ -25,7 +25,21 @@ final class WebInstaller
 
     public function isInstalled(): bool
     {
-        return is_file($this->basePath.'/storage/installed');
+        if (is_file($this->basePath.'/storage/installed')) {
+            return true;
+        }
+
+        if (! is_file($this->basePath.'/.env')) {
+            return false;
+        }
+
+        try {
+            $app = $this->bootstrapLaravel();
+
+            return AppInstall::isInstalled();
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /**

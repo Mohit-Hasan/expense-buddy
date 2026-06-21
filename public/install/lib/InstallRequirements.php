@@ -55,6 +55,23 @@ final class InstallRequirements
                 'hint' => 'Enable the GD PHP extension',
             ],
             [
+                'label' => 'Built frontend assets (public/build)',
+                'ok' => is_file($this->basePath.'/public/build/manifest.json'),
+                'hint' => 'Run npm install && npm run build before packaging, or upload a release that includes /public/build',
+            ],
+            [
+                'label' => 'Apache mod_rewrite (recommended)',
+                'ok' => ! function_exists('apache_get_modules') || in_array('mod_rewrite', apache_get_modules(), true),
+                'hint' => 'Enable mod_rewrite and point your domain document root to /public',
+            ],
+            [
+                'label' => 'public/storage link (for uploaded logos)',
+                'ok' => is_link($this->basePath.'/public/storage')
+                    || is_dir($this->basePath.'/public/storage')
+                    || ! is_file($this->basePath.'/.env'),
+                'hint' => 'Run php artisan storage:link, or continue — the installer creates this automatically',
+            ],
+            [
                 'label' => 'Vendor folder included',
                 'ok' => is_file($this->basePath.'/vendor/autoload.php'),
                 'hint' => 'Upload the full package including /vendor',

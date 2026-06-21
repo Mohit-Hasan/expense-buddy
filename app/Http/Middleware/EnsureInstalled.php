@@ -21,7 +21,15 @@ class EnsureInstalled
         }
 
         $isPublicAssetRoute = $request->routeIs('pwa.*')
-            || $request->is('build/*', 'storage/*', 'icons/*', 'sw.js', 'favicon.svg');
+            || $request->is(
+                'build/*',
+                'storage/*',
+                'icons/*',
+                'sw.js',
+                'favicon.svg',
+                'brand-default.svg',
+                'manifest.webmanifest',
+            );
 
         if ($isPublicAssetRoute) {
             return $next($request);

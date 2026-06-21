@@ -159,13 +159,16 @@ function stepClass(int $current, int $target): string
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ExpenseBuddy Installer</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <base href="<?= INSTALL_BASE ?>">
     <link rel="stylesheet" href="<?= INSTALL_BASE ?>assets/installer.css">
 </head>
 <body>
 <div class="wrap">
     <div class="hero">
-        <div class="logo-badge">EB</div>
+        <div class="logo-badge">
+            <img src="/brand-default.svg" width="72" height="72" alt="ExpenseBuddy">
+        </div>
         <h1>ExpenseBuddy Installer</h1>
         <p>Your Personal Finance Companion — web setup wizard</p>
     </div>

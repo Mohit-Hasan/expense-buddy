@@ -2,67 +2,113 @@
 
 **Your Personal Finance Companion**
 
-ExpenseBuddy helps you track income, expenses, accounts, and cash flow in one place — with multi-currency support, clear reports, and a mobile-friendly installable app.
+<div align="center">
+
+## ⭐ Star this repo if you find ExpenseBuddy useful
+
+#### It takes one second — and it helps others discover the project, keeps development going, and shows that self-hosted finance tools matter.
+
+[![⭐ Star on GitHub](https://img.shields.io/badge/⭐_Star_ExpenseBuddy-FFD700?style=for-the-badge&logo=github&logoColor=000000&labelColor=fff8dc)](https://github.com/Mohit-Hasan/expense-buddy/stargazers)
+
+**Like what you see?** Tap **Star** above ↑ before you install — every star genuinely helps.
+
+</div>
 
 ---
 
-## What you can do
+ExpenseBuddy is a self-hosted finance app for tracking income, expenses, accounts, lending, and invoices — with multi-currency support, role-based access, and a mobile-friendly installable web app.
 
-### Money in & out
-- Record **income** and **expense** transactions with amount, date, category, and payment method
-- Attach notes, references, and files to any transaction
-- See totals on the dashboard: income, expense, net balance, and cash on hand
+No subscription. Upload to your server, run the web installer, and start managing money in minutes.
+
+---
+
+## Features
+
+### Dashboard & transactions
+- Record **income** and **expense** with date, category, payment method, notes, and references
+- Live dashboard totals: income, expense, net balance, and cash on hand
+- Search and filter your ledger
 
 ### Accounts & transfers
-- Create **bank, cash, or wallet accounts** in different currencies
-- Move money between accounts with **transfers** (balances update automatically)
-- Optional rule to block spending below zero balance
+- Create **bank, cash, or wallet** accounts in different currencies
+- **Transfer** money between accounts — balances update automatically
+- Optional policy to **block negative balances**
 
 ### Categories & reports
-- Organize spending with **income/expense categories**
-- **Detailed analytics** with charts by category, month, and time
-- **Income vs expense** summary and categorized breakdown reports
+- Separate **income** and **expense** categories (archive/restore supported)
+- **Income vs expense** report
+- **Categorized** breakdown and **detailed analytics** with charts
 
 ### Invoices
-- Generate **PDF invoices** from transactions
-- Share a **public link** with clients
+- Generate **PDF invoices** from any transaction
+- Share a **public link** so clients can view or download
 
 ### Multi-currency
-- Set a **base currency** during installation
-- Add more currencies with exchange rates
-- Enter transactions in the account currency with rate at time of entry
+- Choose a **base currency** at install time
+- Add currencies with exchange rates
+- Transactions stay in the account’s native currency; reports convert to base
 
-### Team & settings
-- **Administrator account** created during install
-- **Users & roles** with per-menu permissions
-- Upload your **logo** — used in the app, browser favicon, and mobile home-screen icon
-- **PWA install** prompt on login for Chrome / mobile
-
-### Lending (optional module)
+### Lending
 - Track people and companies you lend to or borrow from
 - Lending overview and per-contact ledger
 
+### Team & administration
+- **Users, roles, and per-menu permissions**
+- **System settings**: app name, logo, base currency, ledger rules
+- **Email settings**: SMTP or PHP Mail — used for password reset emails
+- **Database backup** download (MySQL)
+- **Currency management**
+
+### Security & sign-in
+- **Forgot password** flow with email reset link
+- **Two-factor authentication (2FA)** — any user can enable TOTP with QR code under **Account → Security**
+- **30-day sessions** — “Keep me signed in” on the login page
+- Branded login with optional uploaded logo, or built-in wallet icon fallback
+
+### Branding & PWA
+- Upload a **logo** in admin — used in sidebar, favicon, and mobile home-screen icon
+- If no logo is set, a **built-in wallet SVG** is used everywhere (no broken/black placeholders)
+- **Install as app** prompt on login (Chrome / mobile) — works best over HTTPS
+
 ---
 
-## Install on a live server (upload ZIP)
+## Requirements
 
-The package is ready to upload **with `vendor/` and built frontend assets included**. No Composer or npm commands are required on the server.
+| Requirement | Notes |
+|-------------|--------|
+| **PHP 8.3+** | With PDO, OpenSSL, Mbstring, Tokenizer, XML, Fileinfo, GD |
+| **MySQL / MariaDB** | Recommended for live hosting |
+| **SQLite** | Fine for local testing |
+| **Web server** | Apache (mod_rewrite) or Nginx — document root must be `/public` |
+| **Writable folders** | `storage/`, `bootstrap/cache/`, project root (for `.env`) |
 
-### 1. Upload files
-1. Download or zip the full project folder
-2. Upload to your hosting (cPanel, FTP, etc.)
-3. Point your domain document root to the **`/public`** folder
+The release package includes **`vendor/`** and **`public/build/`** — no Composer or npm is required on the server.
 
-### 2. Folder permissions
-Make sure these are writable by PHP:
-- `/storage`
-- `/bootstrap/cache`
-- project root (so `.env` can be created)
+---
 
-### 3. Create database (MySQL)
+## Install on a live server
+
+### 1. Upload the files
+1. Upload the full project folder to your hosting (cPanel, FTP, etc.)
+2. Set the domain **document root** to the **`public`** folder  
+   *(Not the project root — point directly at `/public`.)*
+
+If your host only allows the project root as document root, a root `.htaccess` is included that forwards requests to `public/`.
+
+### 2. Set permissions
+Make these writable by PHP (typically `755` or `775`):
+
+```
+storage/
+bootstrap/cache/
+```
+
+The project root must also allow creating `.env` during install.
+
+### 3. Create a MySQL database
 In your hosting panel, create:
-- A MySQL database
-- A database user with full access to that database
+- A database
+- A database user with full privileges on that database
 
 ### 4. Run the web installer
 Open in your browser:
@@ -71,47 +117,67 @@ Open in your browser:
 https://yourdomain.com/install/
 ```
 
-Follow the 4 steps:
-
-| Step | What it does |
+| Step | What happens |
 |------|----------------|
-| **Requirements** | Checks PHP version, extensions, vendor folder, writable folders |
-| **Database** | MySQL credentials + your site URL → creates `.env` automatically |
-| **Application** | Admin login, app name, logo, base currency, demo data on/off |
-| **Finish** | Runs fresh migration, storage link, and setup |
+| **1. Requirements** | PHP version, extensions, vendor folder, built assets, writable paths |
+| **2. Database** | MySQL credentials + site URL → `.env` is created automatically |
+| **3. Application** | Admin account, app name, optional logo, base currency, demo data on/off |
+| **4. Finish** | Fresh migration, storage link, admin user, optional demo data |
 
 **Install options:**
-- **Without demo data** — clean ledger; you add your own accounts and categories
-- **With demo data** — sample accounts, categories, payment methods, and contacts (your admin login is still the one you enter)
+- **Logo** — optional; skip to use the built-in wallet icon
+- **Demo data** — sample accounts, categories, payment methods, and contacts (your admin login is still the one you enter)
+- **Fresh reinstall** — checking “confirm reinstall” wipes the database and starts over
 
-Every install runs a **fresh database migration** so you always start clean.
+> Every install runs **`migrate:fresh`** for a clean database.
 
 ### 5. After install
 1. Log in at `https://yourdomain.com/login`
-2. **Delete the `/public/install` folder** from your server for security
+2. Configure **Administration → Settings** (email, branding, currency)
+3. **Delete the `/public/install` folder** from your server
 
 ---
 
 ## Install locally
 
-Same web installer — no terminal setup required if `vendor/` is included.
-
-1. Place the project folder on your machine
-2. Start PHP built-in server from the project root:
+### Option A — Web installer (easiest)
 
 ```bash
 php artisan serve
 ```
 
-3. Open `http://127.0.0.1:8000/install/`
-4. Choose **SQLite** on the database step for the quickest local test
-5. Complete the wizard and log in
+Open `http://127.0.0.1:8000/install/`, choose **SQLite** on the database step, and complete the wizard.
 
----
+### Option B — Developer seed (no installer)
 
-## Optional: developer setup from source
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-If you clone from GitHub without `vendor/`:
+Add to `.env`:
+
+```env
+SEED_DEV_ADMIN=true
+SEED_ADMIN_EMAIL=admin@expensebuddy.test
+SEED_ADMIN_PASSWORD=password
+```
+
+Then:
+
+```bash
+php artisan db:seed
+```
+
+Default login: **admin@expensebuddy.test** / **password**
+
+Optional demo data:
+
+```env
+SEED_DEMO_DATA=true
+```
+
+### Option C — From source (no vendor yet)
 
 ```bash
 composer install
@@ -120,78 +186,138 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Then use `/install/` — the installer still creates `.env`, migrates, and links storage for you.
+Then use **Option A** (`/install/`) or **Option B** (`db:seed`).
 
-To load demo sample data manually on an already-installed app:
+---
+
+## First-time setup inside the app
+
+| Task | Where |
+|------|--------|
+| App name, logo, base currency | **Administration → Settings** |
+| SMTP / PHP Mail for emails | **Administration → Settings → Email Configuration** |
+| Add currencies | **Administration → Currencies** |
+| Users & roles | **Administration → Users / Roles** |
+| Enable 2FA | **Account → Security** (sidebar) |
+| Reset password | **Forgot password?** on login page |
+
+### Email (password reset)
+1. Go to **Administration → Settings → Email Configuration**
+2. Choose **SMTP** (Gmail, Outlook, Mailtrap, etc.) or **PHP Mail**
+3. Fill in host, port, credentials, and “From” address
+4. Save, then test with **Forgot password** on the login page
+
+---
+
+## Configuration reference
+
+Most day-to-day settings are in the admin panel. The installer creates `.env` with these common variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `APP_URL` | Full site URL (no trailing slash) — must match how users access the site |
+| `APP_DEBUG` | `false` on live servers |
+| `APP_ENV` | `production` on live servers |
+| `DB_*` | Database connection |
+| `SESSION_LIFETIME` | Session length in minutes (default `43200` = 30 days) |
+| `LEDGER_ALLOW_NEGATIVE_BALANCES` | Allow accounts to go below zero |
+
+Email is configured in the admin UI (stored in the database), not in `.env`.
+
+---
+
+## Troubleshooting
+
+### Logo or favicon shows a black box
+- Upload a real logo under **Administration → Settings**, or leave logo empty to use the built-in wallet SVG
+- Ensure the storage symlink exists:
 
 ```bash
-php artisan db:seed --class=DemoDataSeeder
+php artisan storage:link
+```
+
+- Hard-refresh the browser (`Cmd+Shift+R` / `Ctrl+Shift+R`) — favicons are heavily cached
+
+### `/storage/...` images return 404
+```bash
+php artisan storage:link
+```
+
+### App works but installer still shows “not installed”
+If you created the admin via `db:seed` instead of the web installer:
+
+```bash
+php artisan expensebuddy:repair-install-lock
+php artisan storage:link
+```
+
+### 404 on all pages except `/install/`
+- Document root must be **`public/`**
+- On Apache, enable **mod_rewrite**
+- On Nginx, use `try_files $uri $uri/ /index.php?$query_string;`
+
+### Styles missing / blank UI
+Ensure `public/build/manifest.json` exists. If you cloned from Git without assets:
+
+```bash
+npm install && npm run build
 ```
 
 ---
 
-## Testing (local & CI)
-
-### Quick commands
+## Testing (developers)
 
 ```bash
-# PHPUnit only (13 tests — unit + feature + route smoke)
+# PHPUnit (unit + feature + route smoke)
 composer test
 
-# Playwright app flows (login, all routes, create data)
+# Playwright end-to-end (app flows)
 npm run test:e2e
 
-# Playwright fresh install wizard (optional)
+# Playwright install wizard
 npm run test:e2e:install
 
-# Full local gate before pushing (PHPUnit + build + Playwright)
+# Full local gate
 composer test:all
-# or
-bash scripts/test-local.sh
 ```
 
-### What is covered
-
-| Suite | Covers |
-|-------|--------|
-| **PHPUnit** | Brand/install helpers, install service, login, admin route smoke (every main GET route), create account/category/transaction |
-| **Playwright** | Admin login/logout, visit all feature pages, PWA manifest, create account/category/transaction/contact |
-| **Playwright install** | Full `/install/` wizard on a fresh SQLite database |
-
-GitHub Actions runs **PHPUnit** and **Playwright** automatically on push/PR (`.github/workflows/tests.yml`).
-
-### First-time Playwright setup
+First-time Playwright setup:
 
 ```bash
 npm install
 npx playwright install chromium
 ```
 
-Tests start a local server on **`http://127.0.0.1:8765`** (with `--no-reload` so the installer can rewrite `.env` safely).
+CI runs automatically on push/PR via GitHub Actions (`.github/workflows/tests.yml`).
+
+E2E tests use port **8765** with `artisan serve --no-reload`.
 
 ---
 
-## Configuration (after install)
+## Security checklist
 
-Most settings are in **Admin → Settings** inside the app.
-
-Environment variables in `.env` (created by installer):
-
-| Variable | Purpose |
-|----------|---------|
-| `APP_URL` | Your site URL |
-| `APP_DEBUG` | `false` on live servers |
-| `DB_*` | Database connection |
-| `LEDGER_ALLOW_NEGATIVE_BALANCES` | Allow spending below zero |
+- [ ] Delete **`/public/install`** after setup
+- [ ] Use **HTTPS** on live sites (required for PWA install on mobile)
+- [ ] Set **`APP_DEBUG=false`** in production
+- [ ] Use a strong administrator password
+- [ ] Enable **2FA** for admin accounts on shared or production servers
+- [ ] Configure **SMTP** so password reset emails work reliably
 
 ---
 
-## Security notes
+## Project structure (quick reference)
 
-- Delete `/public/install` after successful setup
-- Use HTTPS on live sites (needed for mobile app install)
-- Use a strong administrator password
-- Keep `APP_DEBUG=false` in production
+```
+public/           ← Web root (point your domain here)
+public/install/   ← Standalone web installer (delete after setup)
+public/build/     ← Compiled CSS/JS (included in release)
+storage/          ← Logs, uploads, sessions (must be writable)
+database/         ← Migrations & seeders
+```
+
+**Admin is not in `DatabaseSeeder` by default** — it is created by the web installer or `SEED_DEV_ADMIN=true php artisan db:seed`.
+
+Demo sample data only: `php artisan db:seed --class=DemoDataSeeder` *(requires an existing install with admin + currency)*.
 
 ---
 
