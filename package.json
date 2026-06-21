@@ -19,5 +19,12 @@
     },
     "dependencies": {
         "chart.js": "^4.4.7"
+    },
+    "overrides": {
+        "picomatch": "4.0.4"
+    },
+    "engines": {
+        "node": ">=20 <23",
+        "npm": ">=10"
     }
 }
