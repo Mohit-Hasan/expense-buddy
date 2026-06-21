@@ -19,6 +19,12 @@ export async function clickPageAction(page: Page, name: string): Promise<void> {
     await page.getByRole('banner').getByRole('button', { name }).click();
 }
 
+export async function logoutViaProfileMenu(page: Page): Promise<void> {
+    await page.locator('#profile-menu-toggle').click();
+    await expect(page.locator('#profile-menu-panel')).toBeVisible();
+    await page.locator('#profile-menu-panel').getByRole('menuitem', { name: 'Logout' }).click();
+}
+
 export const authenticatedRoutes = [
     '/',
     '/transactions',
