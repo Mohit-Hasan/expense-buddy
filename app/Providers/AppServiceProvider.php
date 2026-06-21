@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\SystemSetting;
+use App\Services\MailConfigService;
 use App\Support\MoneyFormatter;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Schema;
@@ -31,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
 
                 if ($settings !== null) {
                     config(['ledger.allow_negative_balances' => $settings->allow_negative_balances]);
+                    app(MailConfigService::class)->applyFromSettings($settings);
                 }
             }
 

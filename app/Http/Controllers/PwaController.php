@@ -7,9 +7,8 @@ namespace App\Http\Controllers;
 use App\Models\SystemSetting;
 use App\Support\Brand;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class PwaController extends Controller
 {
@@ -18,10 +17,10 @@ class PwaController extends Controller
         $settings = SystemSetting::query()->first();
         $name = Brand::appName($settings);
         $shortName = mb_strlen($name) > 12 ? mb_substr($name, 0, 12) : $name;
-        $logoUrl = $this->logoUrl($settings);
+        $customLogo = Brand::customLogoUrl($settings);
 
-        $icons = $logoUrl !== null
-            ? $this->logoIcons($logoUrl)
+        $icons = $customLogo !== null
+            ? $this->logoIcons($customLogo)
             : $this->defaultIcons();
 
         return response()->json([
@@ -35,28 +34,36 @@ class PwaController extends Controller
             'theme_color' => '#0d9488',
             'orientation' => 'any',
             'icons' => $icons,
-        ], Response::HTTP_OK, ['Content-Type' => 'application/manifest+json']);
+        ], HttpResponse::HTTP_OK, ['Content-Type' => 'application/manifest+json']);
     }
 
-    public function favicon(): RedirectResponse
+    public function favicon(): Response
     {
         $settings = SystemSetting::query()->first();
-        $logoUrl = $this->logoUrl($settings);
+        $customLogo = Brand::customLogoUrl($settings);
 
-        if ($logoUrl !== null) {
-            return redirect($logoUrl);
+        if ($customLogo !== null) {
+            $logoPath = $settings?->system_logo;
+            $publicPath = is_string($logoPath) && $logoPath !== ''
+                ? public_path('storage/'.$logoPath)
+                : null;
+
+            if ($publicPath !== null && Brand::isUsableLogoFile($publicPath)) {
+                $mime = mime_content_type($publicPath) ?: 'image/png';
+
+                return response(
+                    file_get_contents($publicPath) ?: '',
+                    HttpResponse::HTTP_OK,
+                    ['Content-Type' => $mime],
+                );
+            }
         }
 
-        return redirect(asset('favicon.svg'));
-    }
-
-    private function logoUrl(?SystemSetting $settings): ?string
-    {
-        if ($settings?->system_logo && Storage::disk('public')->exists($settings->system_logo)) {
-            return asset('storage/'.$settings->system_logo);
-        }
-
-        return null;
+        return response(
+            file_get_contents(public_path('favicon.svg')) ?: '',
+            HttpResponse::HTTP_OK,
+            ['Content-Type' => 'image/svg+xml'],
+        );
     }
 
     /**
@@ -91,17 +98,19 @@ class PwaController extends Controller
      */
     private function defaultIcons(): array
     {
+        $icon = Brand::defaultLogoUrl();
+
         return [
             [
-                'src' => asset('icons/icon-192.png'),
+                'src' => $icon,
                 'sizes' => '192x192',
-                'type' => 'image/png',
+                'type' => 'image/svg+xml',
                 'purpose' => 'any',
             ],
             [
-                'src' => asset('icons/icon-512.png'),
+                'src' => $icon,
                 'sizes' => '512x512',
-                'type' => 'image/png',
+                'type' => 'image/svg+xml',
                 'purpose' => 'any',
             ],
         ];

@@ -15,6 +15,11 @@ use RuntimeException;
 
 class SystemSettingService
 {
+    public function __construct(
+        private readonly MailConfigService $mailConfigService,
+    ) {
+    }
+
     public function get(): SystemSetting
     {
         $settings = SystemSetting::query()->with('defaultCurrency')->first();
@@ -58,6 +63,51 @@ class SystemSettingService
 
         if (! empty($data['default_currency_id'])) {
             $this->setDefaultCurrency($settings, (int) $data['default_currency_id']);
+        }
+
+        if (isset($data['mail_driver'])) {
+            $settings->mail_driver = (string) $data['mail_driver'];
+        }
+
+        if (array_key_exists('mail_host', $data)) {
+            $settings->mail_host = $data['mail_host'] !== null && $data['mail_host'] !== ''
+                ? (string) $data['mail_host']
+                : null;
+        }
+
+        if (array_key_exists('mail_port', $data)) {
+            $settings->mail_port = $data['mail_port'] !== null && $data['mail_port'] !== ''
+                ? (int) $data['mail_port']
+                : null;
+        }
+
+        if (array_key_exists('mail_username', $data)) {
+            $settings->mail_username = $data['mail_username'] !== null && $data['mail_username'] !== ''
+                ? (string) $data['mail_username']
+                : null;
+        }
+
+        if (! empty($data['mail_password'])) {
+            $settings->mail_password = $this->mailConfigService->encryptPassword((string) $data['mail_password']);
+        }
+
+        if (array_key_exists('mail_encryption', $data)) {
+            $encryption = $data['mail_encryption'];
+            $settings->mail_encryption = $encryption !== null && $encryption !== '' && $encryption !== 'none'
+                ? (string) $encryption
+                : null;
+        }
+
+        if (array_key_exists('mail_from_address', $data)) {
+            $settings->mail_from_address = $data['mail_from_address'] !== null && $data['mail_from_address'] !== ''
+                ? (string) $data['mail_from_address']
+                : null;
+        }
+
+        if (array_key_exists('mail_from_name', $data)) {
+            $settings->mail_from_name = $data['mail_from_name'] !== null && $data['mail_from_name'] !== ''
+                ? (string) $data['mail_from_name']
+                : null;
         }
 
         $settings->save();

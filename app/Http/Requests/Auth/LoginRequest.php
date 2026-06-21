@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -29,11 +31,14 @@ class LoginRequest extends FormRequest
         ];
     }
 
-    public function authenticate(): void
+    public function validateCredentials(): User
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        /** @var User|null $user */
+        $user = User::query()->where('email', $this->string('email')->toString())->first();
+
+        if ($user === null || ! Hash::check($this->string('password')->toString(), $user->password)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -41,17 +46,21 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        $user = Auth::user();
-
-        if ($user !== null && $user->status === 'inactive') {
-            Auth::logout();
-
+        if ($user->status === 'inactive') {
             throw ValidationException::withMessages([
                 'email' => 'This account is inactive.',
             ]);
         }
 
         RateLimiter::clear($this->throttleKey());
+
+        return $user;
+    }
+
+    public function loginUser(User $user): void
+    {
+        Auth::login($user, $this->boolean('remember', true));
+        $this->session()->regenerate();
     }
 
     public function ensureIsNotRateLimited(): void

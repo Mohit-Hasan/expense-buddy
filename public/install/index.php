@@ -58,10 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($step === 3) {
-        if (empty($_FILES['system_logo']['tmp_name'])) {
-            $errors[] = 'Logo is required. It will be used as favicon and mobile app icon.';
-        }
-
         if (trim($_POST['admin_password'] ?? '') !== trim($_POST['admin_password_confirmation'] ?? '')) {
             $errors[] = 'Administrator passwords do not match.';
         }
@@ -80,13 +76,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'confirm_reinstall' => isset($_POST['confirm_reinstall']) ? '1' : '0',
             ]);
 
-            $_SESSION['install_logo'] = [
-                'tmp_name' => $_FILES['system_logo']['tmp_name'],
-                'name' => $_FILES['system_logo']['name'],
-            ];
+            unset($_SESSION['install_logo']);
 
-            copy($_FILES['system_logo']['tmp_name'], sys_get_temp_dir().'/expensebuddy-logo-'.session_id());
-            $_SESSION['install_logo']['stored'] = sys_get_temp_dir().'/expensebuddy-logo-'.session_id();
+            if (! empty($_FILES['system_logo']['tmp_name'])) {
+                $_SESSION['install_logo'] = [
+                    'tmp_name' => $_FILES['system_logo']['tmp_name'],
+                    'name' => $_FILES['system_logo']['name'],
+                ];
+
+                copy($_FILES['system_logo']['tmp_name'], sys_get_temp_dir().'/expensebuddy-logo-'.session_id());
+                $_SESSION['install_logo']['stored'] = sys_get_temp_dir().'/expensebuddy-logo-'.session_id();
+            }
 
             header('Location: '.INSTALL_BASE.'?step=4');
 
@@ -98,12 +98,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = $_SESSION['install'] ?? [];
         $logo = $_SESSION['install_logo'] ?? null;
 
-        if ($data === [] || $logo === null || ! is_file($logo['stored'])) {
+        if ($data === []) {
             $errors[] = 'Installation session expired. Please start again.';
             $step = 3;
         } else {
             try {
-                $logs = $installer->run($data, $logo['stored'], $logo['name']);
+                $logo = $_SESSION['install_logo'] ?? null;
+                $logoPath = ($logo !== null && is_file($logo['stored'] ?? '')) ? $logo['stored'] : null;
+                $logoName = $logo['name'] ?? null;
+
+                $logs = $installer->run($data, $logoPath, $logoName);
                 $_SESSION['install_complete'] = true;
                 $_SESSION['install_admin_email'] = $data['admin_email'] ?? '';
                 unset($_SESSION['install'], $_SESSION['install_logo']);
@@ -298,9 +302,9 @@ function stepClass(int $current, int $target): string
                             <input id="system_name" name="system_name" value="<?= h($data['system_name'] ?? 'ExpenseBuddy') ?>" required>
                         </div>
                         <div class="field">
-                            <label for="system_logo">Logo &amp; favicon *</label>
-                            <input id="system_logo" type="file" name="system_logo" accept="image/*" required>
-                            <small>Square PNG/JPG recommended — used in sidebar, browser tab, and mobile install icon.</small>
+                            <label for="system_logo">Logo &amp; favicon</label>
+                            <input id="system_logo" type="file" name="system_logo" accept="image/*">
+                            <small>Optional. Leave empty to use the built-in ExpenseBuddy wallet icon.</small>
                         </div>
                     </div>
 

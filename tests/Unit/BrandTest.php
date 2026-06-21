@@ -27,4 +27,14 @@ class BrandTest extends TestCase
 
         $this->assertSame('Acme Finance', Brand::appName($settings));
     }
+
+    #[Test]
+    public function it_falls_back_to_default_logo_when_no_custom_logo_is_set(): void
+    {
+        $settings = new SystemSetting(['system_logo' => null]);
+
+        $this->assertFalse(Brand::hasLogo($settings));
+        $this->assertStringContainsString('brand-default.svg', Brand::displayLogoUrl($settings));
+        $this->assertStringContainsString('favicon.svg', Brand::faviconUrl());
+    }
 }

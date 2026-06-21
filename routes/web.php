@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AccountSecurityController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
@@ -20,6 +24,15 @@ Route::get('/favicon.ico', [PwaController::class, 'favicon'])->name('pwa.favicon
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
+
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'store'])->name('password.email');
+
+    Route::get('/reset-password/{token}', [ResetPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [ResetPasswordController::class, 'store'])->name('password.update');
+
+    Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'create'])->name('two-factor.login');
+    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'store'])->name('two-factor.login.store');
 });
 
 Route::post('/logout', [LoginController::class, 'destroy'])
@@ -28,6 +41,11 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 
 Route::middleware(['auth', 'menu.permission'])->group(function (): void {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/account/security', [AccountSecurityController::class, 'index'])->name('account.security');
+    Route::post('/account/security/enable', [AccountSecurityController::class, 'enable'])->name('account.security.enable');
+    Route::post('/account/security/confirm', [AccountSecurityController::class, 'confirm'])->name('account.security.confirm');
+    Route::post('/account/security/disable', [AccountSecurityController::class, 'disable'])->name('account.security.disable');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');

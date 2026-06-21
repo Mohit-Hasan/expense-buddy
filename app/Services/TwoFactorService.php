@@ -66,6 +66,11 @@ final class TwoFactorService
             return false;
         }
 
+        return $this->verifySetup($secret, $code);
+    }
+
+    public function verifySetup(string $secret, string $code): bool
+    {
         return $this->google2fa->verifyKey($secret, $code);
     }
 

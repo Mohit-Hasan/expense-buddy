@@ -21,10 +21,15 @@
                 <div>
                     <label class="mb-1.5 block text-sm font-medium">System Logo</label>
                     <p class="mb-2 text-xs text-slate-500">Used in the sidebar, browser tab favicon, and mobile PWA install icon.</p>
-                    @if ($settings->system_logo)
+                    @if (\App\Support\Brand::hasLogo($settings))
                         <div class="mb-3 flex items-center gap-3">
-                            <img src="{{ asset('storage/'.$settings->system_logo) }}" alt="Logo" class="h-12 w-12 rounded-xl border object-contain p-1 dark:border-slate-700">
+                            <img src="{{ \App\Support\Brand::customLogoUrl($settings) }}" alt="Logo" class="h-12 w-12 rounded-xl border object-contain p-1 dark:border-slate-700">
                             <span class="text-xs text-slate-500">Upload a new file to replace</span>
+                        </div>
+                    @else
+                        <div class="mb-3 flex items-center gap-3">
+                            <x-brand-logo size="sm" />
+                            <span class="text-xs text-slate-500">Using the default wallet icon until you upload a logo</span>
                         </div>
                     @endif
                     <input type="file" name="system_logo" accept="image/*" class="input">
@@ -53,13 +58,7 @@
 
         <x-panel title="Preview">
             <div class="flex items-center gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-                @if ($settings->system_logo)
-                    <img src="{{ asset('storage/'.$settings->system_logo) }}" alt="" class="h-14 w-14 rounded-xl object-contain">
-                @else
-                    <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/30">
-                        <x-ming-icon name="business.wallet" class="h-7 w-7" />
-                    </div>
-                @endif
+                <x-brand-logo size="lg" />
                 <div>
                     <div class="text-lg font-bold">{{ $settings->system_name }}</div>
                     <div class="text-sm text-slate-500">Base: {{ $settings->defaultCurrency?->code ?? '—' }}</div>
@@ -67,4 +66,82 @@
             </div>
         </x-panel>
     </div>
+
+    <x-panel class="mt-6" title="Email Configuration" subtitle="SMTP or PHP mail for password resets and notifications">
+        <form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-4">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="system_name" value="{{ old('system_name', $settings->system_name) }}">
+            <input type="hidden" name="default_currency_id" value="{{ old('default_currency_id', $settings->default_currency_id) }}">
+            @if ($settings->allow_negative_balances)
+                <input type="hidden" name="allow_negative_balances" value="1">
+            @endif
+
+            <div>
+                <label class="mb-1.5 block text-sm font-medium">Mail Driver</label>
+                <select name="mail_driver" id="mail_driver" class="input" data-mail-driver>
+                    <option value="smtp" @selected(old('mail_driver', $settings->mail_driver ?? 'smtp') === 'smtp')>SMTP</option>
+                    <option value="sendmail" @selected(old('mail_driver', $settings->mail_driver ?? 'smtp') === 'sendmail')>PHP Mail (sendmail)</option>
+                </select>
+                <p class="mt-1 text-xs text-slate-500">Use SMTP for Gmail, Outlook, or your hosting provider. PHP Mail uses the server’s built-in mail function.</p>
+            </div>
+
+            <div id="smtp-fields" class="grid gap-4 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                    <label class="mb-1.5 block text-sm font-medium">SMTP Host</label>
+                    <input type="text" name="mail_host" value="{{ old('mail_host', $settings->mail_host) }}" class="input" placeholder="smtp.mailtrap.io">
+                </div>
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">SMTP Port</label>
+                    <input type="number" name="mail_port" value="{{ old('mail_port', $settings->mail_port ?? 587) }}" class="input" min="1" max="65535">
+                </div>
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">Encryption</label>
+                    <select name="mail_encryption" class="input">
+                        <option value="tls" @selected(old('mail_encryption', $settings->mail_encryption ?? 'tls') === 'tls')>TLS</option>
+                        <option value="ssl" @selected(old('mail_encryption', $settings->mail_encryption) === 'ssl')>SSL</option>
+                        <option value="none" @selected(old('mail_encryption', $settings->mail_encryption) === null || old('mail_encryption', $settings->mail_encryption) === 'none')>None</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">Username</label>
+                    <input type="text" name="mail_username" value="{{ old('mail_username', $settings->mail_username) }}" class="input" autocomplete="off">
+                </div>
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">Password</label>
+                    <input type="password" name="mail_password" class="input" placeholder="{{ $settings->mail_password ? '•••••••• (leave blank to keep)' : '' }}" autocomplete="new-password">
+                </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">From Email</label>
+                    <input type="email" name="mail_from_address" value="{{ old('mail_from_address', $settings->mail_from_address) }}" class="input" placeholder="noreply@example.com">
+                </div>
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">From Name</label>
+                    <input type="text" name="mail_from_name" value="{{ old('mail_from_name', $settings->mail_from_name ?? $settings->system_name) }}" class="input">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary">Save Email Settings</button>
+        </form>
+    </x-panel>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const driver = document.querySelector('[data-mail-driver]');
+                const smtpFields = document.getElementById('smtp-fields');
+
+                const toggleSmtp = () => {
+                    if (!driver || !smtpFields) return;
+                    smtpFields.classList.toggle('hidden', driver.value !== 'smtp');
+                };
+
+                driver?.addEventListener('change', toggleSmtp);
+                toggleSmtp();
+            });
+        </script>
+    @endpush
 @endsection

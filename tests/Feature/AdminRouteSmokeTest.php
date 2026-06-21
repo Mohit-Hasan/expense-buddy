@@ -86,6 +86,8 @@ class AdminRouteSmokeTest extends TestCase
             ->assertOk()
             ->assertJsonStructure(['name', 'icons', 'start_url']);
 
-        $this->get('/favicon.ico')->assertRedirect();
+        $this->get('/favicon.ico')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/svg+xml');
     }
 }

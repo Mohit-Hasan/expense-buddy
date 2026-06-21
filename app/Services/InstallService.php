@@ -31,7 +31,7 @@ class InstallService
      *     allow_negative_balances?: bool,
      * } $data
      */
-    public function install(array $data, UploadedFile $logo, bool $force = false): void
+    public function install(array $data, ?UploadedFile $logo = null, bool $force = false): void
     {
         if (! $force && AppInstall::isInstalled()) {
             throw new RuntimeException('Application is already installed.');
@@ -57,7 +57,7 @@ class InstallService
                 'is_default' => true,
             ]);
 
-            $logoPath = $logo->store('branding', 'public');
+            $logoPath = $logo?->store('branding', 'public');
 
             SystemSetting::query()->create([
                 'system_name' => $data['system_name'] ?? Brand::name(),

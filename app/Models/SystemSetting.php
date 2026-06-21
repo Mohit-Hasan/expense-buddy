@@ -17,6 +17,14 @@ class SystemSetting extends Model
         'system_logo',
         'default_currency_id',
         'allow_negative_balances',
+        'mail_driver',
+        'mail_host',
+        'mail_port',
+        'mail_username',
+        'mail_password',
+        'mail_encryption',
+        'mail_from_address',
+        'mail_from_name',
     ];
 
     /**
@@ -24,6 +32,7 @@ class SystemSetting extends Model
      */
     protected $casts = [
         'allow_negative_balances' => 'boolean',
+        'mail_port' => 'integer',
     ];
 
     public function defaultCurrency(): BelongsTo

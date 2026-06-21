@@ -80,7 +80,7 @@ final class WebInstaller
      * @param array<string, mixed> $payload
      * @return list<string>
      */
-    public function run(array $payload, string $logoTmpPath, string $logoOriginalName): array
+    public function run(array $payload, ?string $logoTmpPath = null, ?string $logoOriginalName = null): array
     {
         $logs = [];
 
@@ -102,13 +102,17 @@ final class WebInstaller
         $logs[] = trim(Artisan::output()) ?: 'Migrations completed.';
 
         $logs[] = 'Creating administrator and settings…';
-        $uploadedLogo = new UploadedFile(
-            $logoTmpPath,
-            $logoOriginalName,
-            mime_content_type($logoTmpPath) ?: 'image/png',
-            null,
-            true,
-        );
+        $uploadedLogo = null;
+
+        if ($logoTmpPath !== null && $logoOriginalName !== null && is_file($logoTmpPath)) {
+            $uploadedLogo = new UploadedFile(
+                $logoTmpPath,
+                $logoOriginalName,
+                mime_content_type($logoTmpPath) ?: 'image/png',
+                null,
+                true,
+            );
+        }
 
         $app->make(InstallService::class)->install([
             'admin_name' => (string) $payload['admin_name'],

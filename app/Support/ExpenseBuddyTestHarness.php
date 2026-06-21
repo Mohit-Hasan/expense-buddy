@@ -32,11 +32,11 @@ final class ExpenseBuddyTestHarness
         Artisan::call('migrate:fresh', ['--force' => true]);
     }
 
-    public static function install(bool $withDemo = false): User
+    public static function install(bool $withDemo = false, bool $withLogo = false): User
     {
         self::freshSchema();
 
-        $logo = UploadedFile::fake()->image('logo.png', 128, 128);
+        $logo = $withLogo ? UploadedFile::fake()->image('logo.png', 128, 128) : null;
 
         app(InstallService::class)->install([
             'admin_name' => self::ADMIN_NAME,

@@ -1,5 +1,6 @@
 @props([
     'size' => 'md',
+    'variant' => 'default',
 ])
 
 @php
@@ -11,19 +12,15 @@
         default => 'h-12 w-12',
     };
 
-    $iconClasses = match ($size) {
-        'sm' => 'h-5 w-5',
-        'lg' => 'h-7 w-7',
-        default => 'h-7 w-7',
-    };
+    $displayUrl = Brand::displayLogoUrl($systemSettings ?? null);
 
-    $logoUrl = Brand::logoUrl($systemSettings ?? null);
+    $imgClasses = match ($variant) {
+        'onBrand' => "$sizeClasses rounded-xl object-contain bg-white/10 p-1",
+        default => "$sizeClasses rounded-xl object-contain",
+    };
 @endphp
 
-@if ($logoUrl)
-    <img {{ $attributes->merge(['class' => "$sizeClasses rounded-xl object-contain"]) }} src="{{ $logoUrl }}" alt="">
-@else
-    <div {{ $attributes->merge(['class' => "flex $sizeClasses items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-900/30"]) }}>
-        <x-ming-icon name="business.wallet" class="{{ $iconClasses }}" />
-    </div>
-@endif
+<img
+    {{ $attributes->merge(['class' => $imgClasses, 'alt' => Brand::appName($systemSettings ?? null)]) }}
+    src="{{ $displayUrl }}"
+>

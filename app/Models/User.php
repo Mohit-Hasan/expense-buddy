@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -21,6 +22,8 @@ class User extends Authenticatable
         'password',
         'role_id',
         'status',
+        'two_factor_secret',
+        'two_factor_confirmed_at',
     ];
 
     /**
@@ -29,14 +32,19 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
     ];
 
     /**
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'password' => 'hashed',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+            'two_factor_confirmed_at' => 'datetime',
+        ];
+    }
 
     public function role(): BelongsTo
     {
@@ -61,5 +69,15 @@ class User extends Authenticatable
         $this->loadMissing('role.permissions');
 
         return $this->role->permissions->contains('slug', $slug);
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_secret !== null && $this->two_factor_confirmed_at !== null;
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordNotification($token));
     }
 }
