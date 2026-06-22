@@ -12,7 +12,12 @@ interface AccountRepositoryInterface
     /**
      * @return Collection<int, Account>
      */
-    public function all(): Collection;
+    public function all(?string $status = null): Collection;
+
+    /**
+     * @return Collection<int, Account>
+     */
+    public function active(): Collection;
 
     public function find(int $id): ?Account;
 

@@ -11,6 +11,7 @@ use App\Models\Transaction;
 use App\Repositories\Contracts\AccountRepositoryInterface;
 use App\Repositories\Contracts\ContactRepositoryInterface;
 use App\Repositories\Contracts\TransactionRepositoryInterface;
+use App\Support\TransactionType;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;
@@ -68,8 +69,8 @@ class TransactionService
 
     public function createLending(TransactionData $dto): Transaction
     {
-        if ($dto->type !== 'lending') {
-            throw new InvalidArgumentException('Transaction type must be lending.');
+        if (! TransactionType::isLending($dto->type)) {
+            throw new InvalidArgumentException('Transaction type must be a lending type.');
         }
 
         if ($dto->contactId === null) {
@@ -78,16 +79,28 @@ class TransactionService
 
         return DB::transaction(function () use ($dto): Transaction {
             $this->assertPositiveAmount($dto->amount);
-            $this->assertSufficientBalance($dto->accountId, $dto->amount);
             $this->assertAccountExists($dto->accountId);
+
+            if (in_array($dto->type, [TransactionType::LENDING_OUT, TransactionType::LENDING_REPAY_OUT], true)) {
+                $this->assertSufficientBalance($dto->accountId, $dto->amount);
+            }
 
             $attributes = $dto->toAttributes();
             $attributes['category_id'] = null;
 
             $transaction = $this->transactionRepository->create($attributes);
 
-            $this->accountRepository->updateBalance($dto->accountId, $dto->amount, 'decrement');
-            $this->contactRepository->updateBalance($dto->contactId, $dto->amount, 'increment');
+            match ($dto->type) {
+                TransactionType::LENDING_OUT, TransactionType::LENDING_REPAY_OUT => $this->accountRepository->updateBalance($dto->accountId, $dto->amount, 'decrement'),
+                TransactionType::LENDING_IN, TransactionType::LENDING_REPAY_IN => $this->accountRepository->updateBalance($dto->accountId, $dto->amount, 'increment'),
+                default => throw new InvalidArgumentException("Unsupported lending type: {$dto->type}"),
+            };
+
+            match ($dto->type) {
+                TransactionType::LENDING_OUT, TransactionType::LENDING_REPAY_OUT => $this->contactRepository->updateBalance($dto->contactId, $dto->amount, 'increment'),
+                TransactionType::LENDING_IN, TransactionType::LENDING_REPAY_IN => $this->contactRepository->updateBalance($dto->contactId, $dto->amount, 'decrement'),
+                default => throw new InvalidArgumentException("Unsupported lending type: {$dto->type}"),
+            };
 
             return $this->transactionRepository->findWithRelations($transaction->id)
                 ?? $transaction;
@@ -177,17 +190,17 @@ class TransactionService
             $this->reverseTransactionEffects($existing);
             $this->assertPositiveAmount($dto->amount);
 
-            if (in_array($dto->type, ['expense', 'lending'], true)) {
+            if (in_array($dto->type, ['expense', TransactionType::LENDING_OUT, TransactionType::LENDING_REPAY_OUT], true)) {
                 $this->assertSufficientBalance($dto->accountId, $dto->amount);
             }
 
-            if ($dto->type === 'lending' && $dto->contactId === null) {
+            if (TransactionType::isLending($dto->type) && $dto->contactId === null) {
                 throw new InvalidArgumentException('Lending transactions require a linked person or company.');
             }
 
             $attributes = $dto->toAttributes();
 
-            if ($dto->type === 'lending') {
+            if (TransactionType::isLending($dto->type)) {
                 $attributes['category_id'] = null;
             }
 
@@ -254,9 +267,10 @@ class TransactionService
         match ($transaction->type) {
             'income' => $this->reverseIncomeEffects($transaction, $amount, $accountId),
             'expense' => $this->reverseExpenseEffects($transaction, $amount, $accountId),
-            'lending' => $this->reverseLendingEffects($transaction, $amount, $accountId),
             'transfer' => $this->reverseTransferEffects($transaction, $amount, $accountId),
-            default => throw new InvalidArgumentException("Unknown transaction type: {$transaction->type}"),
+            default => TransactionType::isLending($transaction->type)
+                ? $this->reverseLendingEffects($transaction, $amount, $accountId)
+                : throw new InvalidArgumentException("Unknown transaction type: {$transaction->type}"),
         };
     }
 
@@ -276,11 +290,21 @@ class TransactionService
 
     private function reverseLendingEffects(Transaction $transaction, string $amount, int $accountId): void
     {
-        $this->accountRepository->updateBalance($accountId, $amount, 'increment');
+        match ($transaction->type) {
+            TransactionType::LENDING_OUT, TransactionType::LENDING_REPAY_OUT => $this->accountRepository->updateBalance($accountId, $amount, 'increment'),
+            TransactionType::LENDING_IN, TransactionType::LENDING_REPAY_IN => $this->accountRepository->updateBalance($accountId, $amount, 'decrement'),
+            default => null,
+        };
 
-        if ($transaction->contact_id !== null) {
-            $this->contactRepository->updateBalance((int) $transaction->contact_id, $amount, 'decrement');
+        if ($transaction->contact_id === null) {
+            return;
         }
+
+        match ($transaction->type) {
+            TransactionType::LENDING_OUT, TransactionType::LENDING_REPAY_OUT => $this->contactRepository->updateBalance((int) $transaction->contact_id, $amount, 'decrement'),
+            TransactionType::LENDING_IN, TransactionType::LENDING_REPAY_IN => $this->contactRepository->updateBalance((int) $transaction->contact_id, $amount, 'increment'),
+            default => null,
+        };
     }
 
     private function reverseTransferEffects(Transaction $transaction, string $amount, int $accountId): void
@@ -303,8 +327,7 @@ class TransactionService
         match ($dto->type) {
             'income' => $this->applyIncomeEffects($dto),
             'expense' => $this->applyExpenseEffects($dto),
-            'lending' => $this->applyLendingEffects($dto),
-            default => throw new InvalidArgumentException("Unsupported transaction type: {$dto->type}"),
+            default => TransactionType::isLending($dto->type) ? $this->applyLendingEffects($dto) : throw new InvalidArgumentException("Unsupported transaction type: {$dto->type}"),
         };
     }
 
@@ -324,11 +347,21 @@ class TransactionService
 
     private function applyLendingEffects(TransactionData $dto): void
     {
-        $this->accountRepository->updateBalance($dto->accountId, $dto->amount, 'decrement');
-
-        if ($dto->contactId !== null) {
-            $this->contactRepository->updateBalance($dto->contactId, $dto->amount, 'increment');
+        if ($dto->contactId === null) {
+            throw new InvalidArgumentException('Lending transactions require a linked person or company.');
         }
+
+        match ($dto->type) {
+            TransactionType::LENDING_OUT, TransactionType::LENDING_REPAY_OUT => $this->accountRepository->updateBalance($dto->accountId, $dto->amount, 'decrement'),
+            TransactionType::LENDING_IN, TransactionType::LENDING_REPAY_IN => $this->accountRepository->updateBalance($dto->accountId, $dto->amount, 'increment'),
+            default => throw new InvalidArgumentException("Unsupported lending type: {$dto->type}"),
+        };
+
+        match ($dto->type) {
+            TransactionType::LENDING_OUT, TransactionType::LENDING_REPAY_OUT => $this->contactRepository->updateBalance($dto->contactId, $dto->amount, 'increment'),
+            TransactionType::LENDING_IN, TransactionType::LENDING_REPAY_IN => $this->contactRepository->updateBalance($dto->contactId, $dto->amount, 'decrement'),
+            default => throw new InvalidArgumentException("Unsupported lending type: {$dto->type}"),
+        };
     }
 
     private function assertPositiveAmount(string $amount): void

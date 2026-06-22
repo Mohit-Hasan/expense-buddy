@@ -1,23 +1,26 @@
 /**
- * Transaction form: lending requires contact; category hidden for lending.
+ * Transaction form: lending requires contact; category/payment hidden for lending.
  */
 export function initTransactionForm() {
     const typeSelect = document.querySelector('select[name="type"]');
     const contactWrap = document.getElementById('contact-field-wrap');
     const contactSelect = document.querySelector('select[name="contact_id"]');
+    const contactHint = document.getElementById('contact-hint');
     const categoryWrap = document.getElementById('category-field-wrap');
+    const paymentWrap = document.getElementById('payment-field-wrap');
+    const paymentSelect = document.querySelector('select[name="payment_method_id"]');
 
     if (!typeSelect) {
         return;
     }
 
-    const sync = () => {
-        const isLending = typeSelect.value === 'lending';
+    const isLendingType = (value) => value.startsWith('lending');
 
-        if (contactWrap) {
-            contactWrap.classList.toggle('ring-2', isLending);
-            contactWrap.classList.toggle('ring-amber-300', isLending);
-            contactWrap.classList.toggle('rounded-xl', isLending);
+    const sync = () => {
+        const isLending = isLendingType(typeSelect.value);
+
+        if (contactHint) {
+            contactHint.textContent = isLending ? '(required)' : '(optional source link)';
         }
 
         if (contactSelect) {
@@ -26,6 +29,15 @@ export function initTransactionForm() {
 
         if (categoryWrap) {
             categoryWrap.classList.toggle('hidden', isLending);
+        }
+
+        if (paymentWrap) {
+            paymentWrap.classList.toggle('hidden', isLending);
+        }
+
+        if (paymentSelect) {
+            paymentSelect.required = !isLending;
+            paymentSelect.disabled = isLending;
         }
     };
 

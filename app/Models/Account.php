@@ -20,6 +20,7 @@ class Account extends Model
         'initial_balance',
         'current_balance',
         'note',
+        'status',
     ];
 
     /**

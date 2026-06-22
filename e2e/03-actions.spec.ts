@@ -9,11 +9,16 @@ test('admin can create an account from the accounts page', async ({ page }) => {
     const accountNumber = `PW-${Date.now()}`;
 
     await page.goto('/accounts');
-    await page.locator('input[name="account_title"]').fill('Playwright Cash');
-    await page.locator('input[name="account_number"]').fill(accountNumber);
-    await page.locator('select[name="currency_id"]').selectOption({ index: 0 });
-    await page.locator('input[name="initial_balance"]').fill('500');
-    await page.getByRole('button', { name: 'Create Account' }).click();
+
+    const createForm = page.locator('form').filter({
+        has: page.getByRole('button', { name: 'Create Account' }),
+    });
+
+    await createForm.getByPlaceholder('Account title').fill('Playwright Cash');
+    await createForm.getByPlaceholder('Account number (optional)').fill(accountNumber);
+    await createForm.locator('select[name="currency_id"]').selectOption({ index: 0 });
+    await createForm.locator('input[name="initial_balance"]').fill('500');
+    await createForm.getByRole('button', { name: 'Create Account' }).click();
 
     await expect(page.getByText('Account created successfully')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Playwright Cash' }).first()).toBeVisible();

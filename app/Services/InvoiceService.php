@@ -17,6 +17,25 @@ use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceService
 {
+    public function revokePublicLink(int $transactionId): TransactionInvoice
+    {
+        $transaction = Transaction::query()->find($transactionId);
+
+        if ($transaction === null) {
+            throw new InvalidArgumentException('Transaction not found.');
+        }
+
+        $invoice = $transaction->invoices()->latest()->first();
+
+        if ($invoice === null) {
+            throw new InvalidArgumentException('Invoice not found.');
+        }
+
+        $invoice->update(['is_public' => false]);
+
+        return $invoice->fresh(['transaction.account', 'transaction.currency', 'transaction.contact']);
+    }
+
     public function createOrRefresh(int $transactionId, bool $makePublic = false, ?int $expiresInDays = 30): TransactionInvoice
     {
         $transaction = Transaction::query()

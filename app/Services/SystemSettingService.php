@@ -110,6 +110,28 @@ class SystemSettingService
                 : null;
         }
 
+        if (array_key_exists('backup_enabled', $data)) {
+            $settings->backup_enabled = (bool) $data['backup_enabled'];
+        }
+
+        if (isset($data['backup_frequency'])) {
+            $settings->backup_frequency = (string) $data['backup_frequency'];
+        }
+
+        if (array_key_exists('backup_day', $data)) {
+            $settings->backup_day = (int) $data['backup_day'];
+        }
+
+        if (array_key_exists('backup_email', $data)) {
+            $settings->backup_email = $data['backup_email'] !== null && $data['backup_email'] !== ''
+                ? (string) $data['backup_email']
+                : null;
+        }
+
+        if (array_key_exists('error_tracking_enabled', $data)) {
+            $settings->error_tracking_enabled = (bool) $data['error_tracking_enabled'];
+        }
+
         $settings->save();
 
         config(['ledger.allow_negative_balances' => $settings->allow_negative_balances]);

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('account_id')
                 ->constrained('accounts')
                 ->restrictOnDelete();
-            $table->enum('type', ['income', 'expense', 'transfer', 'lending']);
+            $table->string('type', 30);
             $table->foreignId('category_id')
                 ->nullable()
                 ->constrained('transaction_categories')

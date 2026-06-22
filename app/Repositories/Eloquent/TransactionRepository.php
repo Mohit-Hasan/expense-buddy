@@ -85,7 +85,12 @@ class TransactionRepository implements TransactionRepositoryInterface
                 'currency',
                 'contact',
                 'latestInvoice',
+                'transferReference.account',
             ])
+            ->where(function (Builder $builder): void {
+                $builder->where('type', '!=', 'transfer')
+                    ->orWhereColumn('id', '<', 'transfer_reference_id');
+            })
             ->orderByDesc('transaction_date')
             ->orderByDesc('id');
 

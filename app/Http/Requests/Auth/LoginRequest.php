@@ -61,6 +61,8 @@ class LoginRequest extends FormRequest
     {
         Auth::login($user, $this->boolean('remember', true));
         $this->session()->regenerate();
+
+        app(\App\Services\UserSessionManager::class)->stampVersionOnLogin($user, $this->session());
     }
 
     public function ensureIsNotRateLimited(): void

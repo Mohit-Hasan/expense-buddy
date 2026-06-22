@@ -53,6 +53,8 @@ class TwoFactorChallengeController extends Controller
         Auth::login($user, $remember);
         $request->session()->regenerate();
 
+        app(\App\Services\UserSessionManager::class)->stampVersionOnLogin($user, $request->session());
+
         return redirect()->intended(route('dashboard'));
     }
 }

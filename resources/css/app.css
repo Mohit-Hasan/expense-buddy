@@ -33,6 +33,36 @@
         @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
     }
 
+    select.input:not([multiple]) {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.1em 1.1em;
+        padding-right: 2.5rem;
+    }
+
+    .dark select.input:not([multiple]) {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    }
+
+    input[type='date'].input::-webkit-calendar-picker-indicator,
+    input[type='datetime-local'].input::-webkit-calendar-picker-indicator,
+    input[type='time'].input::-webkit-calendar-picker-indicator,
+    input[type='month'].input::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        margin: 0;
+        opacity: 0.65;
+    }
+
+    .dark input[type='date'].input::-webkit-calendar-picker-indicator,
+    .dark input[type='datetime-local'].input::-webkit-calendar-picker-indicator,
+    .dark input[type='time'].input::-webkit-calendar-picker-indicator,
+    .dark input[type='month'].input::-webkit-calendar-picker-indicator {
+        opacity: 0.75;
+        filter: invert(1) brightness(1.25);
+    }
+
     .amount-input {
         @apply font-mono text-base font-semibold tracking-tight tabular-nums;
     }
@@ -46,7 +76,15 @@
     }
 
     .amount-lg {
-        @apply text-xl font-bold tracking-tight sm:text-2xl;
+        @apply text-sm font-bold tracking-tight sm:text-base;
+    }
+
+    .stat-card .amount-lg {
+        @apply mt-3 text-sm font-bold sm:text-base;
+    }
+
+    .stat-card {
+        @apply card relative min-w-0 overflow-hidden p-5 transition hover:shadow-card-hover;
     }
 
     .amount-income {
@@ -79,10 +117,6 @@
 
     .card {
         @apply rounded-2xl border border-slate-200/80 bg-white shadow-card dark:border-slate-800 dark:bg-slate-900;
-    }
-
-    .stat-card {
-        @apply card relative overflow-hidden p-5 transition hover:shadow-card-hover;
     }
 
     .action-card {
@@ -134,7 +168,7 @@
     }
 
     .search-select-trigger {
-        @apply input flex w-full items-center justify-between gap-2 text-left;
+        @apply input relative flex w-full items-center pr-10 text-left;
     }
 
     .search-select-trigger.is-placeholder {
@@ -143,7 +177,7 @@
 
     .search-select-trigger::after {
         content: '';
-        @apply h-2 w-2 shrink-0 rotate-45 border-b-2 border-r-2 border-slate-400;
+        @apply pointer-events-none absolute right-3.5 top-1/2 h-2 w-2 shrink-0 -translate-y-1/2 rotate-45 border-b-2 border-r-2 border-slate-400;
     }
 
     .search-select-panel {
@@ -180,5 +214,16 @@
 
     .confirm-modal-panel {
         @apply relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900;
+    }
+}
+
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+
+    main {
+        padding: 0 !important;
     }
 }

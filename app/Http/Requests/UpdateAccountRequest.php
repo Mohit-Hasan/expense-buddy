@@ -21,7 +21,7 @@ class UpdateAccountRequest extends FormRequest
         return [
             'account_title' => ['required', 'string', 'max:255'],
             'account_number' => ['nullable', 'string', 'max:255'],
-            'currency_id' => ['required', 'integer', 'exists:currencies,id'],
+            'currency_id' => ['sometimes', 'integer', 'exists:currencies,id'],
             'note' => ['nullable', 'string'],
         ];
     }

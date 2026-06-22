@@ -25,6 +25,13 @@ class SystemSetting extends Model
         'mail_encryption',
         'mail_from_address',
         'mail_from_name',
+        'backup_enabled',
+        'backup_frequency',
+        'backup_day',
+        'backup_email',
+        'backup_last_run_at',
+        'backup_last_success_at',
+        'error_tracking_enabled',
     ];
 
     /**
@@ -33,6 +40,11 @@ class SystemSetting extends Model
     protected $casts = [
         'allow_negative_balances' => 'boolean',
         'mail_port' => 'integer',
+        'backup_enabled' => 'boolean',
+        'backup_day' => 'integer',
+        'backup_last_run_at' => 'datetime',
+        'backup_last_success_at' => 'datetime',
+        'error_tracking_enabled' => 'boolean',
     ];
 
     public function defaultCurrency(): BelongsTo

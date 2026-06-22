@@ -2,9 +2,11 @@ import './bootstrap';
 import Chart from 'chart.js/auto';
 import { initSearchSelects } from './searchSelect';
 import { initConfirmModal } from './confirmModal';
+import './copyButton';
 import './formModal';
 import { initTransactionForm } from './transactionForm';
 import { initPwaInstall, registerServiceWorker } from './pwaInstall';
+import { initBalanceTrendPanels } from './trendPeriodFilter';
 
 registerServiceWorker();
 initPwaInstall();
@@ -107,6 +109,7 @@ export function baseChartOptions(extra = {}) {
 }
 
 window.LedgerCharts = { chartColors, baseChartOptions };
+window.flushChartQueue?.();
 
 function bindAccountCurrency(accountSelectId, currencySelectId, rateInputId) {
     const accountSelect = document.getElementById(accountSelectId);
@@ -143,3 +146,5 @@ function bindAccountCurrency(accountSelectId, currencySelectId, rateInputId) {
 
 bindAccountCurrency('txn-account', 'txn-currency', 'txn-rate');
 bindAccountCurrency('transfer-source', 'transfer-currency', 'transfer-rate');
+
+initBalanceTrendPanels();

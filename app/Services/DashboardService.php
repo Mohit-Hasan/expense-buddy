@@ -60,13 +60,7 @@ class DashboardService
     private function sumExpense(): string
     {
         return bcadd((string) (Transaction::query()
-            ->where(function ($query): void {
-                $query->where('type', 'expense')
-                    ->orWhere(function ($transferQuery): void {
-                        $transferQuery->where('type', 'transfer')
-                            ->whereColumn('id', '<', 'transfer_reference_id');
-                    });
-            })
+            ->where('type', 'expense')
             ->sum('amount') ?? '0'), '0', 4);
     }
 
@@ -93,15 +87,8 @@ class DashboardService
                 ->sum('amount') ?? '0'), '0', 4);
 
             $monthExpense = bcadd((string) (Transaction::query()
-                ->where(function ($query) use ($start, $end): void {
-                    $query->where('type', 'expense')
-                        ->whereBetween('transaction_date', [$start, $end])
-                        ->orWhere(function ($transferQuery) use ($start, $end): void {
-                            $transferQuery->where('type', 'transfer')
-                                ->whereColumn('id', '<', 'transfer_reference_id')
-                                ->whereBetween('transaction_date', [$start, $end]);
-                        });
-                })
+                ->where('type', 'expense')
+                ->whereBetween('transaction_date', [$start, $end])
                 ->sum('amount') ?? '0'), '0', 4);
 
             $income[] = $monthIncome;

@@ -26,7 +26,12 @@
                         <select name="type" id="txn-type" class="input" data-search-select="off" required>
                             <option value="income" @selected(old('type') === 'income')>Income</option>
                             <option value="expense" @selected(old('type', 'expense') === 'expense')>Expense</option>
-                            <option value="lending" @selected(old('type') === 'lending')>Lending</option>
+                            <optgroup label="Lending">
+                                <option value="lending_out" @selected(old('type') === 'lending_out' || old('type') === 'lending')>Loan out (you lend)</option>
+                                <option value="lending_in" @selected(old('type') === 'lending_in')>Loan in (you borrow)</option>
+                                <option value="lending_repay_in" @selected(old('type') === 'lending_repay_in')>Repayment received</option>
+                                <option value="lending_repay_out" @selected(old('type') === 'lending_repay_out')>Repayment sent</option>
+                            </optgroup>
                         </select>
                     </div>
                     <div>
@@ -59,7 +64,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div>
+                    <div id="payment-field-wrap">
                         <label class="label">Payment Method</label>
                         <select name="payment_method_id" class="input" data-search-select data-placeholder="Select method" data-search-placeholder="Search methods…" required>
                             <option value="">Select method</option>
@@ -123,20 +128,13 @@
         <div class="space-y-4">
             <x-panel title="Type Guide">
                 <ul class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
-                    <li><span class="badge-income">Income</span> Money in. Link a person/company if it is a repayment.</li>
-                    <li><span class="badge-expense">Expense</span> Money out. Optionally link who you paid.</li>
-                    <li><span class="badge-lending">Lending</span> Money lent out — <strong>requires</strong> person/company. Not counted as expense.</li>
+                    <li><span class="badge-income">Income</span> Money in from sales, salary, freelance, etc.</li>
+                    <li><span class="badge-expense">Expense</span> Money out for purchases and bills.</li>
+                    <li><span class="badge-lending">Loan out</span> You lend money — tracked per contact, not expense.</li>
+                    <li><span class="badge-lending">Loan in</span> You borrow money — not counted as income.</li>
+                    <li><span class="badge-lending">Repayments</span> Track money paid back without affecting income/expense totals.</li>
                 </ul>
             </x-panel>
         </div>
     </div>
 @endsection
-
-@push('scripts')
-<script>
-    document.getElementById('txn-type')?.addEventListener('change', function () {
-        const hint = document.getElementById('contact-hint');
-        if (hint) hint.textContent = this.value === 'lending' ? '(required)' : '(optional source link)';
-    });
-</script>
-@endpush

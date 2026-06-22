@@ -24,7 +24,7 @@ jobs:
 
       - name: Prepare environment
         run: |
-          cp .env.example .env
+          cp .env.testing .env
           php artisan key:generate
 
       - name: Run PHPUnit
@@ -63,7 +63,8 @@ jobs:
           cp .env.testing .env
           php artisan key:generate
           mkdir -p database
-          : > database/testing.sqlite
+          rm -f database/testing.sqlite storage/installed
+          php artisan expensebuddy:prepare-e2e --demo
           npm run build
 
       - name: Install Playwright browser
@@ -73,13 +74,10 @@ jobs:
         run: npx playwright test
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
+          PLAYWRIGHT_SKIP_GLOBAL_SETUP: '1'
 
       - name: Run Playwright install wizard test
-        run: |
-          cp .env.testing .env
-          rm -f storage/installed database/database.sqlite
-          : > database/testing.sqlite
-          PLAYWRIGHT_INCLUDE_INSTALL=1 npx playwright test e2e/00-install.spec.ts
+        run: PLAYWRIGHT_INCLUDE_INSTALL=1 npx playwright test e2e/00-install.spec.ts
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
 

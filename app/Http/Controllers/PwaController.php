@@ -8,13 +8,16 @@ use App\Models\SystemSetting;
 use App\Support\Brand;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class PwaController extends Controller
 {
     public function manifest(): JsonResponse
     {
-        $settings = SystemSetting::query()->first();
+        $settings = Schema::hasTable('system_settings')
+            ? SystemSetting::query()->first()
+            : null;
         $name = Brand::appName($settings);
         $shortName = mb_strlen($name) > 12 ? mb_substr($name, 0, 12) : $name;
         $customLogo = Brand::customLogoUrl($settings);
@@ -39,7 +42,9 @@ class PwaController extends Controller
 
     public function favicon(): Response
     {
-        $settings = SystemSetting::query()->first();
+        $settings = Schema::hasTable('system_settings')
+            ? SystemSetting::query()->first()
+            : null;
         $customLogo = Brand::customLogoUrl($settings);
 
         if ($customLogo !== null) {

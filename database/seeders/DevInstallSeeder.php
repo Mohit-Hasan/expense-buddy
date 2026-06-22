@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\PaymentMethod;
 use App\Services\InstallService;
 use App\Support\AppInstall;
 use Illuminate\Database\Seeder;
@@ -34,6 +35,13 @@ class DevInstallSeeder extends Seeder
             'currency_symbol' => '$',
             'allow_negative_balances' => false,
         ], null, true);
+
+        foreach (['Cash', 'Bank Transfer', 'Credit Card', 'Mobile Banking'] as $method) {
+            PaymentMethod::query()->firstOrCreate(
+                ['name' => $method],
+                ['status' => 'active'],
+            );
+        }
 
         $email = env('SEED_ADMIN_EMAIL', 'admin@expensebuddy.test');
 

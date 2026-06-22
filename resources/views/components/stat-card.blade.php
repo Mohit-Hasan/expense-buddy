@@ -18,14 +18,14 @@
 
 <div {{ $attributes->merge(['class' => 'stat-card']) }}>
     <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br {{ $colorClasses }} blur-2xl"></div>
-    <div class="relative">
+    <div class="relative min-w-0">
         <div class="flex items-start justify-between gap-3">
             <p class="text-sm font-medium text-slate-500 dark:text-slate-400">{{ $label }}</p>
             @if ($icon)
                 <x-ming-icon :name="$icon" class="h-6 w-6 shrink-0 opacity-80" />
             @endif
         </div>
-        <p class="mt-3 amount amount-lg amount-neutral">{{ $value }}</p>
+        <p class="amount amount-lg amount-neutral">{{ $value }}</p>
         @if ($trend)
             <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">{{ $trend }}</p>
         @endif
