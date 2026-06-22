@@ -8,6 +8,7 @@ use App\Models\SystemSetting;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 final class RouteErrorTracker
 {
@@ -18,47 +19,63 @@ final class RouteErrorTracker
 
     public function isEnabled(): bool
     {
-        return (bool) SystemSetting::query()->value('error_tracking_enabled');
+        try {
+            if (! Schema::hasTable('system_settings')) {
+                return false;
+            }
+
+            return (bool) SystemSetting::query()->value('error_tracking_enabled');
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function record(int $statusCode, string $path): void
     {
-        if (! $this->isEnabled()) {
-            return;
+        try {
+            if (! Schema::hasTable('system_settings') || ! Schema::hasTable('route_error_counts')) {
+                return;
+            }
+
+            if (! $this->isEnabled()) {
+                return;
+            }
+
+            if (! in_array($statusCode, self::TRACKED_STATUSES, true)) {
+                return;
+            }
+
+            $path = '/'.ltrim(mb_substr($path, 0, 250), '/');
+            $now = now();
+
+            $existing = DB::table('route_error_counts')
+                ->where('path', $path)
+                ->where('status_code', $statusCode)
+                ->first();
+
+            if ($existing === null) {
+                DB::table('route_error_counts')->insert([
+                    'path' => $path,
+                    'status_code' => $statusCode,
+                    'hit_count' => 1,
+                    'last_hit_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+
+                return;
+            }
+
+            DB::table('route_error_counts')
+                ->where('id', $existing->id)
+                ->update([
+                    'hit_count' => (int) $existing->hit_count + 1,
+                    'last_hit_at' => $now,
+                    'updated_at' => $now,
+                ]);
+        } catch (\Throwable) {
+            // Ignore tracking failures during install or before migrations run.
         }
-
-        if (! in_array($statusCode, self::TRACKED_STATUSES, true)) {
-            return;
-        }
-
-        $path = '/'.ltrim(mb_substr($path, 0, 250), '/');
-        $now = now();
-
-        $existing = DB::table('route_error_counts')
-            ->where('path', $path)
-            ->where('status_code', $statusCode)
-            ->first();
-
-        if ($existing === null) {
-            DB::table('route_error_counts')->insert([
-                'path' => $path,
-                'status_code' => $statusCode,
-                'hit_count' => 1,
-                'last_hit_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]);
-
-            return;
-        }
-
-        DB::table('route_error_counts')
-            ->where('id', $existing->id)
-            ->update([
-                'hit_count' => (int) $existing->hit_count + 1,
-                'last_hit_at' => $now,
-                'updated_at' => $now,
-            ]);
     }
 
     /**

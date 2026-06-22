@@ -29,10 +29,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->respond(function (\Symfony\Component\HttpFoundation\Response $response, \Throwable $exception, \Illuminate\Http\Request $request) {
             if (! $request->expectsJson()) {
-                app(\App\Services\RouteErrorTracker::class)->record(
-                    $response->getStatusCode(),
-                    '/'.$request->path()
-                );
+                try {
+                    app(\App\Services\RouteErrorTracker::class)->record(
+                        $response->getStatusCode(),
+                        '/'.$request->path()
+                    );
+                } catch (\Throwable) {
+                    // Ignore tracking failures during install or before migrations run.
+                }
             }
 
             return $response;

@@ -11,13 +11,13 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,
     reporter: [['list'], ['html', { open: 'never' }]],
-    testIgnore: includeInstall ? undefined : '**/00-install.spec.ts',
+    testIgnore: includeInstall ? ['**/0[1-9]-*.spec.ts'] : '**/00-install.spec.ts',
     use: {
         baseURL,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
     },
-    globalSetup: includeInstall ? undefined : './e2e/global-setup.ts',
+    globalSetup: process.env.PLAYWRIGHT_SKIP_GLOBAL_SETUP === '1' ? undefined : './e2e/global-setup.ts',
     projects: [
         {
             name: 'chromium',
@@ -26,7 +26,7 @@ export default defineConfig({
     ],
     webServer: {
         command: `php artisan serve --port=${port} --no-reload`,
-        url: baseURL,
+        url: `${baseURL}/up`,
         reuseExistingServer: !process.env.CI,
         stdout: 'pipe',
         stderr: 'pipe',

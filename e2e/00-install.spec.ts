@@ -1,12 +1,9 @@
-import { execSync } from 'node:child_process';
-import fs from 'node:fs';
+import { test, expect } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { test, expect } from '@playwright/test';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const logoPath = path.join(root, 'e2e/fixtures/logo.png');
-const testingDb = path.join(root, 'database/testing.sqlite');
 
 const installAdmin = {
     name: 'E2E Install Admin',
@@ -15,36 +12,6 @@ const installAdmin = {
 };
 
 test.describe.configure({ mode: 'serial' });
-
-test.beforeAll(() => {
-    const envTesting = path.join(root, '.env.testing');
-    const envFile = path.join(root, '.env');
-    if (fs.existsSync(envTesting)) {
-        fs.copyFileSync(envTesting, envFile);
-    }
-
-    const lock = path.join(root, 'storage/installed');
-    if (fs.existsSync(lock)) {
-        fs.unlinkSync(lock);
-    }
-
-    fs.mkdirSync(path.join(root, 'database'), { recursive: true });
-    if (fs.existsSync(testingDb)) {
-        fs.unlinkSync(testingDb);
-    }
-    fs.closeSync(fs.openSync(testingDb, 'w'));
-
-    execSync('php artisan expensebuddy:prepare-e2e --uninstalled', {
-        cwd: root,
-        stdio: 'inherit',
-        env: {
-            ...process.env,
-            APP_ENV: 'testing',
-            DB_CONNECTION: 'sqlite',
-            DB_DATABASE: testingDb,
-        },
-    });
-});
 
 test('fresh install wizard completes successfully', async ({ page, baseURL }) => {
     test.setTimeout(120_000);

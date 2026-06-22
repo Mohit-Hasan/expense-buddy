@@ -10,13 +10,14 @@ php artisan test
 echo "==> Preparing Playwright environment"
 cp .env.testing .env
 mkdir -p database
-: > database/testing.sqlite
+rm -f database/testing.sqlite storage/installed
+php artisan expensebuddy:prepare-e2e --demo
 
 echo "==> Building frontend assets"
 npm run build
 
 echo "==> Running Playwright app suite"
-npx playwright test
+PLAYWRIGHT_SKIP_GLOBAL_SETUP=1 npx playwright test
 
 if [[ "${RUN_INSTALL_E2E:-0}" == "1" ]]; then
   echo "==> Running Playwright install wizard suite"
