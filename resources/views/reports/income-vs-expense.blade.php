@@ -70,7 +70,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<x-chart-init>
     const colors = window.LedgerCharts.chartColors();
 
     new Chart(document.getElementById('monthlyPerformanceChart'), {
@@ -97,5 +97,5 @@
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: colors.text } } } },
     });
-</script>
+</x-chart-init>
 @endpush

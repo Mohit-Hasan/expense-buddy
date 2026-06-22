@@ -12,6 +12,7 @@
             <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data" class="space-y-4">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="settings_section" value="general">
 
                 <div>
                     <label class="mb-1.5 block text-sm font-medium">System Name</label>
@@ -52,6 +53,12 @@
                     Allow negative account balances
                 </label>
 
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="error_tracking_enabled" value="1" @checked(old('error_tracking_enabled', $settings->error_tracking_enabled)) class="rounded border-slate-300 text-brand-600">
+                    Enable error route tracking
+                </label>
+                <p class="text-xs text-slate-500">When enabled, an <strong>Error Insights</strong> tab appears here with paginated failed-route reports.</p>
+
                 <button type="submit" class="btn-primary">Save Settings</button>
             </form>
         </x-panel>
@@ -71,11 +78,7 @@
         <form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-4">
             @csrf
             @method('PUT')
-            <input type="hidden" name="system_name" value="{{ old('system_name', $settings->system_name) }}">
-            <input type="hidden" name="default_currency_id" value="{{ old('default_currency_id', $settings->default_currency_id) }}">
-            @if ($settings->allow_negative_balances)
-                <input type="hidden" name="allow_negative_balances" value="1">
-            @endif
+            <input type="hidden" name="settings_section" value="email">
 
             <div>
                 <label class="mb-1.5 block text-sm font-medium">Mail Driver</label>

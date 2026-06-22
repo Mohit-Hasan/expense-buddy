@@ -7,8 +7,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreContactRequest;
 use App\Http\Requests\UpdateContactRequest;
 use App\Repositories\Contracts\ContactRepositoryInterface;
+use App\Services\BalanceTrendChartBuilder;
 use App\Services\ReportService;
+use App\Models\Transaction;
+use App\Support\BalanceTrendPeriod;
 use App\Support\MoneyFormatter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -18,20 +22,23 @@ class ContactController extends Controller
     public function __construct(
         private readonly ContactRepositoryInterface $contactRepository,
         private readonly ReportService $reportService,
+        private readonly BalanceTrendChartBuilder $balanceTrendChartBuilder,
     ) {
     }
 
-    public function overview(): View
+    public function overview(Request $request): View
     {
+        $period = BalanceTrendPeriod::resolve($request->input('period'));
         $people = $this->contactRepository->findByType('person');
         $companies = $this->contactRepository->findByType('company');
-        $overview = $this->reportService->lendingOverviewLedger();
+        $overview = $this->reportService->lendingOverviewLedger($period);
 
         return view('lending.overview', [
             'people' => $people,
             'companies' => $companies,
             'totalPeople' => $people->count() + $companies->count(),
             'overview' => $overview,
+            'period' => $period,
         ]);
     }
 
@@ -63,10 +70,11 @@ class ContactController extends Controller
 
     public function ledger(Request $request): View
     {
+        $period = BalanceTrendPeriod::resolve($request->input('period'));
         $contactId = (int) $request->input('contact_id');
 
         if ($contactId > 0) {
-            $ledger = $this->reportService->contactBalanceLedger($contactId);
+            $ledger = $this->reportService->contactBalanceLedger($contactId, $period);
 
             return view('lending.ledger', [
                 'contacts' => $this->contactRepository->allActive(),
@@ -77,10 +85,11 @@ class ContactController extends Controller
                 'selectedContactId' => $contactId,
                 'selectedContact' => $this->contactRepository->find($contactId),
                 'baseCurrency' => MoneyFormatter::baseCurrency(),
+                'period' => $period,
             ]);
         }
 
-        $overview = $this->reportService->lendingOverviewLedger();
+        $overview = $this->reportService->lendingOverviewLedger($period);
 
         return view('lending.ledger', [
             'contacts' => $this->contactRepository->allActive(),
@@ -91,7 +100,26 @@ class ContactController extends Controller
             'selectedContactId' => null,
             'selectedContact' => null,
             'baseCurrency' => MoneyFormatter::baseCurrency(),
+            'period' => $period,
         ]);
+    }
+
+    public function trendChart(Request $request): JsonResponse
+    {
+        $period = BalanceTrendPeriod::resolve($request->input('period'));
+        $contactId = (int) $request->input('contact_id');
+
+        $query = Transaction::query();
+
+        if ($contactId > 0) {
+            $query->where('contact_id', $contactId);
+        } else {
+            $query->whereNotNull('contact_id');
+        }
+
+        return response()->json(
+            $this->balanceTrendChartBuilder->build($query, $period)
+        );
     }
 
     public function store(StoreContactRequest $request): RedirectResponse

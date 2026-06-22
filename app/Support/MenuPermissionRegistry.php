@@ -70,6 +70,15 @@ class MenuPermissionRegistry
                 'patterns' => ['categories.*'],
             ],
             [
+                'group' => 'Main Menu',
+                'name' => 'Payment Methods',
+                'slug' => 'menu.payment-methods',
+                'route' => 'payment-methods.index',
+                'active' => 'payment-methods.*',
+                'icon' => 'business.bank-card',
+                'patterns' => ['payment-methods.*'],
+            ],
+            [
                 'group' => 'Lending',
                 'name' => 'Lending Overview',
                 'slug' => 'menu.lending.overview',
@@ -191,6 +200,10 @@ class MenuPermissionRegistry
     {
         if ($routeName === null) {
             return null;
+        }
+
+        if (Str::is('admin.error-insights*', $routeName)) {
+            return 'menu.admin.settings';
         }
 
         foreach (self::items() as $item) {

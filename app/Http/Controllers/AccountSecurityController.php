@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\ActiveSessionService;
 use App\Services\TwoFactorService;
+use App\Services\UserSessionManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,6 +15,8 @@ class AccountSecurityController extends Controller
 {
     public function __construct(
         private readonly TwoFactorService $twoFactorService,
+        private readonly ActiveSessionService $activeSessionService,
+        private readonly UserSessionManager $userSessionManager,
     ) {
     }
 
@@ -26,11 +30,39 @@ class AccountSecurityController extends Controller
             $qrSvg = $this->twoFactorService->qrCodeSvg($user, (string) $pendingSecret);
         }
 
+        $sessions = $this->activeSessionService->activeForUser($user, $request->session()->getId());
+
         return view('account.security', [
             'user' => $user,
             'pendingSecret' => $pendingSecret,
             'qrSvg' => $qrSvg,
+            'sessions' => $sessions,
         ]);
+    }
+
+    public function destroySession(Request $request, string $session): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $this->userSessionManager->logoutDevice($user, $request, $session)) {
+            return back()->withErrors(['session' => 'That session could not be logged out.']);
+        }
+
+        return back()->with('success', 'The selected session has been logged out.');
+    }
+
+    public function logoutOtherSessions(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $removed = $this->userSessionManager->logoutOtherDevices($user, $request);
+
+        if ($removed === 0) {
+            return back()->with('success', 'No other active sessions were found.');
+        }
+
+        return back()->with('success', $removed === 1
+            ? '1 other session has been logged out.'
+            : "{$removed} other sessions have been logged out.");
     }
 
     public function enable(Request $request): RedirectResponse

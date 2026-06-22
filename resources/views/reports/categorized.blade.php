@@ -74,7 +74,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<x-chart-init>
     const colors = window.LedgerCharts.chartColors();
     const doughnut = (id, labels, values) => new Chart(document.getElementById(id), {
         type: 'doughnut',
@@ -101,5 +101,5 @@
 
     horizontalBar('incomeCategoryBarChart', @json($charts['income']['labels']), @json($charts['income']['values']), colors.income);
     horizontalBar('expenseCategoryBarChart', @json($charts['expense']['labels']), @json($charts['expense']['values']), colors.expense);
-</script>
+</x-chart-init>
 @endpush

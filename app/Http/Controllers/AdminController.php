@@ -14,12 +14,14 @@ use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Currency;
 use App\Models\Role;
 use App\Models\User;
+use App\Http\Requests\Admin\UpdateBackupSettingsRequest;
 use App\Services\CurrencyManagementService;
+use App\Services\DatabaseBackupService;
+use App\Services\RouteErrorTracker;
 use App\Services\SystemSettingService;
 use App\Services\UserManagementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -30,13 +32,17 @@ class AdminController extends Controller
         private readonly SystemSettingService $systemSettingService,
         private readonly CurrencyManagementService $currencyManagementService,
         private readonly UserManagementService $userManagementService,
+        private readonly DatabaseBackupService $databaseBackupService,
+        private readonly RouteErrorTracker $routeErrorTracker,
     ) {
     }
 
     public function settings(): View
     {
+        $settings = $this->systemSettingService->get();
+
         return view('admin.settings', [
-            'settings' => $this->systemSettingService->get(),
+            'settings' => $settings,
             'currencies' => Currency::query()->orderBy('name')->get(),
         ]);
     }
@@ -48,7 +54,39 @@ class AdminController extends Controller
             $request->file('system_logo')
         );
 
-        return back()->with('success', 'System settings saved.');
+        $message = $request->input('settings_section') === 'email'
+            ? 'Email settings saved.'
+            : 'General settings saved.';
+
+        return back()->with('success', $message);
+    }
+
+    public function errorInsights(): View|RedirectResponse
+    {
+        $settings = $this->systemSettingService->get();
+
+        if (! $settings->error_tracking_enabled) {
+            return redirect()
+                ->route('admin.settings')
+                ->withErrors(['form' => 'Enable error route tracking under General Settings first.']);
+        }
+
+        return view('admin.error-insights', [
+            'errorHits' => $this->routeErrorTracker->paginate(20),
+        ]);
+    }
+
+    public function clearErrorTracking(): RedirectResponse
+    {
+        if (! $this->systemSettingService->get()->error_tracking_enabled) {
+            return redirect()->route('admin.settings');
+        }
+
+        $this->routeErrorTracker->clear();
+
+        return redirect()
+            ->route('admin.error-insights')
+            ->with('success', 'Error route statistics cleared.');
     }
 
     public function currencies(): View
@@ -191,54 +229,28 @@ class AdminController extends Controller
         }
     }
 
+    public function backup(): View
+    {
+        return view('admin.backup', [
+            'settings' => $this->systemSettingService->get(),
+            'backupSupported' => $this->databaseBackupService->isSupported(),
+            'driverLabel' => $this->databaseBackupService->driverLabel(),
+        ]);
+    }
+
+    public function updateBackup(UpdateBackupSettingsRequest $request): RedirectResponse
+    {
+        $this->systemSettingService->update($request->validated());
+
+        return back()->with('success', 'Backup schedule saved.');
+    }
+
     public function backupDatabase(): StreamedResponse|RedirectResponse
     {
-        $connection = config('database.default');
-        $database = config("database.connections.{$connection}.database");
-
-        if ($connection !== 'mysql' || ! is_string($database) || $database === '') {
-            return back()->withErrors(['form' => 'Database backup is only supported for MySQL connections.']);
+        try {
+            return $this->databaseBackupService->downloadResponse();
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['form' => $exception->getMessage()]);
         }
-
-        $filename = 'ledger_backup_'.now()->format('Y_m_d_His').'.sql';
-
-        return response()->streamDownload(function () use ($database): void {
-            $tables = DB::select('SHOW TABLES');
-            $tableKey = 'Tables_in_'.$database;
-
-            echo "-- Expense Manager Ledger Backup\n";
-            echo '-- Generated at: '.now()->toDateTimeString()."\n\n";
-            echo "SET FOREIGN_KEY_CHECKS=0;\n\n";
-
-            foreach ($tables as $table) {
-                $tableName = $table->{$tableKey};
-                $createRow = DB::selectOne('SHOW CREATE TABLE `'.$tableName.'`');
-                $createSql = $createRow->{'Create Table'} ?? '';
-
-                echo "DROP TABLE IF EXISTS `{$tableName}`;\n";
-                echo $createSql.";\n\n";
-
-                $rows = DB::table($tableName)->get();
-
-                foreach ($rows as $row) {
-                    $columns = array_keys((array) $row);
-                    $values = array_map(function (mixed $value): string {
-                        if ($value === null) {
-                            return 'NULL';
-                        }
-
-                        return "'".str_replace("'", "''", (string) $value)."'";
-                    }, array_values((array) $row));
-
-                    echo 'INSERT INTO `'.$tableName.'` (`'.implode('`, `', $columns).'`) VALUES ('.implode(', ', $values).");\n";
-                }
-
-                echo "\n";
-            }
-
-            echo "SET FOREIGN_KEY_CHECKS=1;\n";
-        }, $filename, [
-            'Content-Type' => 'application/sql',
-        ]);
     }
 }

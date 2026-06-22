@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Support\TransactionType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -20,22 +21,28 @@ class UpdateTransactionRequest extends FormRequest
     public function rules(): array
     {
         $type = (string) $this->input('type');
+        $isLending = TransactionType::isLending($type);
 
         return [
             'account_id' => ['required', 'integer', 'exists:accounts,id'],
-            'type' => ['required', 'string', Rule::in(['income', 'expense', 'lending'])],
+            'type' => ['required', 'string', Rule::in(TransactionType::creatable())],
             'category_id' => [
-                Rule::excludeIf($type === 'lending'),
+                Rule::excludeIf($isLending),
                 'nullable',
                 'integer',
                 'exists:transaction_categories,id',
             ],
-            'payment_method_id' => ['required', 'integer', 'exists:payment_methods,id'],
+            'payment_method_id' => [
+                Rule::excludeIf($isLending),
+                'required',
+                'integer',
+                'exists:payment_methods,id',
+            ],
             'currency_id' => ['required', 'integer', 'exists:currencies,id'],
             'amount' => ['required', 'numeric', 'gt:0', 'regex:/^\d+(\.\d{1,4})?$/'],
             'rate_at_transaction' => ['required', 'numeric', 'gt:0', 'regex:/^\d+(\.\d{1,4})?$/'],
             'contact_id' => [
-                Rule::requiredIf($type === 'lending'),
+                Rule::requiredIf($isLending),
                 'nullable',
                 'integer',
                 'exists:contacts,id',

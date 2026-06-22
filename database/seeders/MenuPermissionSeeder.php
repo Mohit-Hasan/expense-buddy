@@ -35,6 +35,7 @@ class MenuPermissionSeeder extends Seeder
                         'menu.transfers',
                         'menu.accounts',
                         'menu.categories',
+                        'menu.payment-methods',
                         'menu.lending.overview',
                         'menu.lending.contacts',
                         'menu.lending.ledger',

@@ -45,4 +45,17 @@ class TransactionInvoice extends Model
 
         return $this->expires_at->isFuture();
     }
+
+    public function linkStatus(): string
+    {
+        if (! $this->is_public) {
+            return 'revoked';
+        }
+
+        if ($this->expires_at !== null && $this->expires_at->isPast()) {
+            return 'expired';
+        }
+
+        return 'active';
+    }
 }

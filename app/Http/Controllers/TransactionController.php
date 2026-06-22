@@ -12,6 +12,7 @@ use App\Http\Requests\StoreTransferRequest;
 use App\Http\Requests\UpdateTransactionRequest;
 use App\Models\Currency;
 use App\Models\PaymentMethod;
+use App\Support\TransactionType;
 use App\Models\TransactionCategory;
 use App\Repositories\Contracts\AccountRepositoryInterface;
 use App\Repositories\Contracts\ContactRepositoryInterface;
@@ -41,7 +42,7 @@ class TransactionController extends Controller
 
         return view('transactions.index', [
             'transactions' => $transactions,
-            'accounts' => $this->accountRepository->all(),
+            'accounts' => $this->accountRepository->active(),
             'categories' => TransactionCategory::query()->where('status', 'active')->orderBy('name')->get(),
             'contacts' => $this->contactRepository->allActive(),
             'filters' => $request->only(['type', 'category_id', 'account_id', 'contact_id', 'date_from', 'date_to']),
@@ -61,11 +62,23 @@ class TransactionController extends Controller
     public function store(StoreTransactionRequest $request): RedirectResponse
     {
         try {
-            $dto = TransactionData::fromArray($request->validated());
+            $data = $request->validated();
+
+            if (TransactionType::isLending($data['type'])) {
+                $paymentMethodId = PaymentMethod::query()->where('status', 'active')->orderBy('id')->value('id');
+
+                if ($paymentMethodId === null) {
+                    return back()->withInput()->withErrors(['form' => 'No active payment method is available for lending entries.']);
+                }
+
+                $data['payment_method_id'] = $paymentMethodId;
+            }
+
+            $dto = TransactionData::fromArray($data);
 
             if ($dto->type === 'income') {
                 $this->transactionService->createIncome($dto);
-            } elseif ($dto->type === 'lending') {
+            } elseif (TransactionType::isLending($dto->type)) {
                 $this->transactionService->createLending($dto);
             } else {
                 $this->transactionService->createExpense($dto);
@@ -101,7 +114,19 @@ class TransactionController extends Controller
     public function update(UpdateTransactionRequest $request, int $id): RedirectResponse
     {
         try {
-            $this->transactionService->update($id, TransactionData::fromArray($request->validated()));
+            $data = $request->validated();
+
+            if (TransactionType::isLending($data['type'])) {
+                $paymentMethodId = PaymentMethod::query()->where('status', 'active')->orderBy('id')->value('id');
+
+                if ($paymentMethodId === null) {
+                    return back()->withInput()->withErrors(['form' => 'No active payment method is available for lending entries.']);
+                }
+
+                $data['payment_method_id'] = $paymentMethodId;
+            }
+
+            $this->transactionService->update($id, TransactionData::fromArray($data));
 
             return redirect()
                 ->route('transactions.index')
@@ -136,7 +161,7 @@ class TransactionController extends Controller
     private function formData(): array
     {
         return [
-            'accounts' => $this->accountRepository->all(),
+            'accounts' => $this->accountRepository->active(),
             'currencies' => Currency::query()->orderBy('name')->get(),
             'categories' => TransactionCategory::query()->where('status', 'active')->orderBy('name')->get(),
             'paymentMethods' => PaymentMethod::query()->where('status', 'active')->orderBy('name')->get(),

@@ -5,10 +5,6 @@
 @section('subheading', 'Browse and filter all income, expense, and transfer records')
 
 @section('actions')
-    <a href="{{ route('transactions.create') }}" class="btn-primary">
-        <x-ming-icon name="system.add" class="h-4 w-4" />
-        Record Transaction
-    </a>
     <a href="{{ route('transfers.create') }}" class="btn-secondary">
         <x-ming-icon name="arrow.transfer" class="h-4 w-4" />
         Transfer Funds
@@ -16,7 +12,10 @@
 @endsection
 
 @section('content')
-    @php use App\Support\MoneyFormatter; @endphp
+    @php
+        use App\Support\MoneyFormatter;
+        use App\Support\TransactionType;
+    @endphp
 
     <x-section-nav :items="[
         ['route' => 'transactions.index', 'label' => 'All Entries', 'icon' => 'business.bank-card', 'active' => 'transactions.index'],
@@ -30,7 +29,10 @@
                 <option value="">All Types</option>
                 <option value="income" @selected(($filters['type'] ?? '') === 'income')>Income</option>
                 <option value="expense" @selected(($filters['type'] ?? '') === 'expense')>Expense</option>
-                <option value="lending" @selected(($filters['type'] ?? '') === 'lending')>Lending</option>
+                <option value="lending_out" @selected(($filters['type'] ?? '') === 'lending_out')>Loan out</option>
+                <option value="lending_in" @selected(($filters['type'] ?? '') === 'lending_in')>Loan in</option>
+                <option value="lending_repay_in" @selected(($filters['type'] ?? '') === 'lending_repay_in')>Repayment in</option>
+                <option value="lending_repay_out" @selected(($filters['type'] ?? '') === 'lending_repay_out')>Repayment out</option>
                 <option value="transfer" @selected(($filters['type'] ?? '') === 'transfer')>Transfer</option>
             </select>
             <select name="account_id" class="input" data-search-select data-placeholder="All accounts" data-search-placeholder="Search accounts…">
@@ -84,8 +86,17 @@
                             <td class="td whitespace-nowrap">{{ $transaction->transaction_date->format('M d, Y') }}</td>
                             <td class="td"><x-transaction-type-badge :type="$transaction->type" /></td>
                             <td class="td hidden sm:table-cell">
-                                <div>{{ $transaction->account?->account_title }}</div>
-                                <x-currency-badge :currency="$transaction->currency" class="mt-1" />
+                                @if ($transaction->type === 'transfer')
+                                    <div class="text-sm">
+                                        <span class="text-slate-500">{{ $transaction->account?->account_title }}</span>
+                                        <span class="mx-1 text-slate-400">→</span>
+                                        <span class="font-medium">{{ $transaction->transferReference?->account?->account_title ?? '—' }}</span>
+                                    </div>
+                                    <x-currency-badge :currency="$transaction->currency" class="mt-1" />
+                                @else
+                                    <div>{{ $transaction->account?->account_title }}</div>
+                                    <x-currency-badge :currency="$transaction->currency" class="mt-1" />
+                                @endif
                             </td>
                             <td class="td hidden md:table-cell">{{ $transaction->category?->name ?? '—' }}</td>
                             <td class="td hidden lg:table-cell">{{ $transaction->contact?->name ?? '—' }}</td>
@@ -94,8 +105,8 @@
                                     $amountClass = match ($transaction->type) {
                                         'income' => 'amount-income',
                                         'expense' => 'amount-expense',
-                                        'lending' => 'amount-lending',
-                                        default => 'amount-transfer',
+                                        'transfer' => 'amount-transfer',
+                                        default => TransactionType::isLending($transaction->type) ? 'amount-lending' : 'amount-neutral',
                                     };
                                 @endphp
                                 <span class="amount {{ $amountClass }}">
@@ -113,7 +124,7 @@
                                         <button type="button" data-confirm="Delete this transaction?" form="delete-txn-{{ $transaction->id }}" class="text-sm font-medium text-rose-600 hover:underline">Delete</button>
                                     </div>
                                 @else
-                                    <span class="text-xs text-slate-400">Linked pair</span>
+                                    <span class="text-xs text-slate-400">Fund transfer</span>
                                 @endif
                             </td>
                         </tr>

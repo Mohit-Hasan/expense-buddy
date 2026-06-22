@@ -2,7 +2,7 @@
 
 return [
 
-    'default' => env('SESSION_DRIVER', 'file'),
+    'default' => env('SESSION_DRIVER', 'database'),
 
     'lifetime' => (int) env('SESSION_LIFETIME', 43200),
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),

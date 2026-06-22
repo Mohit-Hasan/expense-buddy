@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Account;
+use App\Models\Contact;
 use App\Models\Transaction;
 use App\Support\MoneyFormatter;
 use Illuminate\Support\Collection;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class ReportService
 {
+    public function __construct(
+        private readonly BalanceTrendChartBuilder $balanceTrendChartBuilder,
+    ) {
+    }
     /**
      * @return array{rows: Collection<int, object>, chart: array<string, mixed>}
      */
@@ -23,7 +28,7 @@ class ReportService
         $rows = Transaction::query()
             ->selectRaw("{$periodExpression} as period")
             ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income")
-            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount WHEN type = 'transfer' AND id < transfer_reference_id THEN amount ELSE 0 END) as total_expense")
+            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expense")
             ->where('transaction_date', '>=', $cutoff)
             ->groupBy('period')
             ->orderBy('period')
@@ -112,10 +117,10 @@ class ReportService
      *     transactions: Collection<int, Transaction>,
      *     summary: array<string, string|int>,
      *     chart: array<string, mixed>,
-     *     contacts: Collection<int, \App\Models\Contact>
+     *     trend_chart: array{labels: list<string>, values: list<string>, meta: array<string, mixed>}
      * }
      */
-    public function lendingOverviewLedger(): array
+    public function lendingOverviewLedger(string $period = 'lifetime'): array
     {
         $contacts = \App\Models\Contact::query()
             ->where('status', 'active')
@@ -153,6 +158,10 @@ class ReportService
                 'labels' => $contacts->take(8)->pluck('name')->values()->all(),
                 'values' => $contacts->take(8)->pluck('current_balance')->map(fn ($v) => (string) $v)->values()->all(),
             ],
+            'trend_chart' => $this->balanceTrendChartBuilder->build(
+                Transaction::query()->whereNotNull('contact_id'),
+                $period,
+            ),
         ];
     }
 
@@ -160,10 +169,10 @@ class ReportService
      * @return array{
      *     transactions: Collection<int, Transaction>,
      *     summary: array<string, string>,
-     *     chart: array<string, mixed>
+     *     chart: array{labels: list<string>, values: list<string>, meta: array<string, mixed>}
      * }
      */
-    public function contactBalanceLedger(int $contactId): array
+    public function contactBalanceLedger(int $contactId, string $period = 'lifetime'): array
     {
         $transactions = Transaction::query()
             ->with(['account.currency', 'category', 'paymentMethod', 'currency'])
@@ -172,44 +181,27 @@ class ReportService
             ->orderBy('id')
             ->get();
 
-        $running = '0.0000';
-        $chartLabels = [];
-        $chartValues = [];
-
-        foreach ($transactions as $transaction) {
-            $amount = (string) $transaction->amount;
-            $running = $this->applyContactBalanceDelta($running, $transaction->type, $amount);
-
-            $chartLabels[] = $transaction->transaction_date->format('M d');
-            $chartValues[] = $running;
-        }
-
         $totalVolume = $transactions->reduce(
             fn (string $carry, Transaction $t): string => bcadd($carry, (string) $t->amount, 4),
             '0.0000'
         );
+
+        $chart = $this->balanceTrendChartBuilder->build(
+            Transaction::query()->where('contact_id', $contactId),
+            $period,
+        );
+
+        $currentBalance = (string) (Contact::query()->whereKey($contactId)->value('current_balance') ?? '0.0000');
 
         return [
             'transactions' => $transactions,
             'summary' => [
                 'total_volume' => $totalVolume,
                 'transaction_count' => (string) $transactions->count(),
-                'current_balance' => $running,
+                'current_balance' => $currentBalance,
             ],
-            'chart' => [
-                'labels' => $chartLabels,
-                'values' => $chartValues,
-            ],
+            'chart' => $chart,
         ];
-    }
-
-    private function applyContactBalanceDelta(string $running, string $type, string $amount): string
-    {
-        return match ($type) {
-            'lending' => bcadd($running, $amount, 4),
-            'income' => bcsub($running, $amount, 4),
-            default => $running,
-        };
     }
 
     /**
@@ -281,8 +273,11 @@ class ReportService
         $timeQuery = Transaction::query()
             ->selectRaw("{$periodExpression} as period")
             ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income")
-            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount WHEN type = 'transfer' AND id < transfer_reference_id THEN amount ELSE 0 END) as total_expense")
-            ->selectRaw("SUM(CASE WHEN type = 'lending' THEN amount ELSE 0 END) as total_lending")
+            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expense")
+            ->selectRaw("SUM(CASE WHEN type IN ('lending_out','lending') THEN amount ELSE 0 END) as lending_out")
+            ->selectRaw("SUM(CASE WHEN type = 'lending_in' THEN amount ELSE 0 END) as lending_in")
+            ->selectRaw("SUM(CASE WHEN type = 'lending_repay_in' THEN amount ELSE 0 END) as lending_repay_in")
+            ->selectRaw("SUM(CASE WHEN type = 'lending_repay_out' THEN amount ELSE 0 END) as lending_repay_out")
             ->groupBy('period')
             ->orderBy('period');
 
@@ -291,13 +286,19 @@ class ReportService
         $periodRows = $timeQuery->get()->map(function (object $row): object {
             $income = bcadd((string) $row->total_income, '0', 4);
             $expense = bcadd((string) $row->total_expense, '0', 4);
-            $lending = bcadd((string) $row->total_lending, '0', 4);
+            $lendingOut = bcadd((string) $row->lending_out, '0', 4);
+            $lendingIn = bcadd((string) $row->lending_in, '0', 4);
+            $lendingRepayIn = bcadd((string) $row->lending_repay_in, '0', 4);
+            $lendingRepayOut = bcadd((string) $row->lending_repay_out, '0', 4);
 
             return (object) [
                 'period' => (string) $row->period,
                 'total_income' => $income,
                 'total_expense' => $expense,
-                'total_lending' => $lending,
+                'lending_out' => $lendingOut,
+                'lending_in' => $lendingIn,
+                'lending_repay_in' => $lendingRepayIn,
+                'lending_repay_out' => $lendingRepayOut,
                 'net_margin' => bcsub($income, $expense, 4),
             ];
         });
@@ -310,10 +311,25 @@ class ReportService
             fn (string $carry, object $row): string => bcadd($carry, $row->total_expense, 4),
             '0.0000'
         );
-        $totalLending = $periodRows->reduce(
-            fn (string $carry, object $row): string => bcadd($carry, $row->total_lending, 4),
+        $totalLendingOut = $periodRows->reduce(
+            fn (string $carry, object $row): string => bcadd($carry, $row->lending_out, 4),
             '0.0000'
         );
+        $totalLendingIn = $periodRows->reduce(
+            fn (string $carry, object $row): string => bcadd($carry, $row->lending_in, 4),
+            '0.0000'
+        );
+        $totalLendingRepayIn = $periodRows->reduce(
+            fn (string $carry, object $row): string => bcadd($carry, $row->lending_repay_in, 4),
+            '0.0000'
+        );
+        $totalLendingRepayOut = $periodRows->reduce(
+            fn (string $carry, object $row): string => bcadd($carry, $row->lending_repay_out, 4),
+            '0.0000'
+        );
+
+        $totalLendingFlowOut = bcadd($totalLendingOut, $totalLendingRepayOut, 4);
+        $totalLendingFlowIn = bcadd($totalLendingIn, $totalLendingRepayIn, 4);
 
         $categoryData = $this->categorizedBreakdown($dateFrom, $dateTo);
         $categoryRows = $categoryData['rows'];
@@ -334,7 +350,10 @@ class ReportService
             'summary' => [
                 'total_income' => $totalIncome,
                 'total_expense' => $totalExpense,
-                'total_lending' => $totalLending,
+                'lending_out' => $totalLendingOut,
+                'lending_in' => $totalLendingIn,
+                'lending_repay_in' => $totalLendingRepayIn,
+                'lending_repay_out' => $totalLendingRepayOut,
                 'net_margin' => bcsub($totalIncome, $totalExpense, 4),
                 'period_count' => (string) $periodRows->count(),
             ],
@@ -342,7 +361,16 @@ class ReportService
                 'labels' => $periodRows->pluck('period')->values()->all(),
                 'income' => $periodRows->pluck('total_income')->values()->all(),
                 'expense' => $periodRows->pluck('total_expense')->values()->all(),
-                'lending' => $periodRows->pluck('total_lending')->values()->all(),
+                'lending_out' => $periodRows->pluck('lending_out')->values()->all(),
+                'lending_in' => $periodRows->pluck('lending_in')->values()->all(),
+                'lending_repay_in' => $periodRows->pluck('lending_repay_in')->values()->all(),
+                'lending_repay_out' => $periodRows->pluck('lending_repay_out')->values()->all(),
+                'lending_flow_out' => $periodRows->map(
+                    fn (object $row): string => bcadd($row->lending_out, $row->lending_repay_out, 4)
+                )->values()->all(),
+                'lending_flow_in' => $periodRows->map(
+                    fn (object $row): string => bcadd($row->lending_in, $row->lending_repay_in, 4)
+                )->values()->all(),
                 'margin' => $periodRows->pluck('net_margin')->values()->all(),
             ],
             'categoryBars' => [
@@ -357,8 +385,13 @@ class ReportService
             ],
             'categoryByPeriod' => $categoryByPeriod,
             'typeBreakdown' => [
-                'labels' => ['Income', 'Expense', 'Lending'],
-                'values' => [$totalIncome, $totalExpense, $totalLending],
+                'labels' => ['Income', 'Expense', 'Lending Out', 'Lending In'],
+                'values' => [
+                    $totalIncome,
+                    $totalExpense,
+                    $totalLendingFlowOut,
+                    $totalLendingFlowIn,
+                ],
             ],
             'periodRows' => $periodRows,
             'categoryRows' => $categoryRows,

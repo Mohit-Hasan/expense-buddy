@@ -12,7 +12,10 @@
 @endsection
 
 @section('content')
-    @php use App\Support\MoneyFormatter; @endphp
+    @php
+        use App\Support\MoneyFormatter;
+        use App\Support\TransactionType;
+    @endphp
 
     <x-section-nav :items="[
         ['route' => 'lending.overview', 'label' => 'Overview', 'icon' => 'business.safe-box', 'active' => 'lending.overview'],
@@ -22,6 +25,9 @@
 
     <x-panel title="Filter by Contact" subtitle="Leave empty for overall view, or pick one contact">
         <form method="GET" action="{{ route('lending.ledger') }}" class="flex flex-wrap items-end gap-3">
+            @if ($period !== \App\Support\BalanceTrendPeriod::LIFETIME)
+                <input type="hidden" name="period" value="{{ $period }}">
+            @endif
             <div class="min-w-[240px] flex-1">
                 <label class="label">Contact</label>
                 <select name="contact_id" class="input" data-search-select data-placeholder="All contacts (overall)" data-search-placeholder="Search contacts…">
@@ -42,7 +48,7 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <div class="text-lg font-semibold">{{ $selectedContact->name }}</div>
-                    <div class="text-sm text-slate-500">{{ ucfirst($selectedContact->type) }} · Outstanding: {{ MoneyFormatter::format((string) $selectedContact->current_balance, $baseCurrency) }}</div>
+                    <div class="text-sm text-slate-500 dark:text-slate-100">{{ ucfirst($selectedContact->type) }} · Outstanding: {{ MoneyFormatter::format((string) $selectedContact->current_balance, $baseCurrency) }}</div>
                 </div>
                 <a href="{{ route('lending.people.edit', $selectedContact->id) }}" class="btn-secondary text-sm">Edit</a>
             </div>
@@ -55,7 +61,12 @@
         </div>
 
         <x-panel class="mt-6" title="Balance Trend">
-            <div class="h-72"><canvas id="contactTrendChart"></canvas></div>
+            <x-balance-trend-panel
+                :chart="$chart"
+                :period="$period"
+                :contact-id="$selectedContactId"
+                label="Outstanding"
+            />
         </x-panel>
     @else
         <div class="mt-6 grid gap-4 sm:grid-cols-4">
@@ -114,7 +125,7 @@
                             <td class="td"><x-transaction-type-badge :type="$transaction->type" /></td>
                             <td class="td">{{ $transaction->account?->account_title }}</td>
                             <td class="td text-right">
-                                <span class="amount {{ $transaction->type === 'lending' ? 'amount-lending' : ($transaction->type === 'income' ? 'amount-income' : 'amount-expense') }}">
+                                <span class="amount {{ TransactionType::isLending($transaction->type) ? 'amount-lending' : ($transaction->type === 'income' ? 'amount-income' : 'amount-expense') }}">
                                     {{ MoneyFormatter::format((string) $transaction->amount, $transaction->currency) }}
                                 </span>
                             </td>
@@ -130,18 +141,9 @@
 @endsection
 
 @push('scripts')
-<script>
+<x-chart-init>
     const colors = window.LedgerCharts.chartColors();
-    @if ($selectedContact && $summary)
-    new Chart(document.getElementById('contactTrendChart'), {
-        type: 'line',
-        data: {
-            labels: @json($chart['labels']),
-            datasets: [{ label: 'Outstanding', data: @json($chart['values']), borderColor: colors.income, backgroundColor: colors.income + '22', fill: true, tension: 0.35 }],
-        },
-        options: window.LedgerCharts.baseChartOptions(),
-    });
-    @elseif (!$selectedContact && $overview)
+    @if (!$selectedContact && $overview)
     new Chart(document.getElementById('overallBalanceChart'), {
         type: 'bar',
         data: {
@@ -151,5 +153,5 @@
         options: window.LedgerCharts.baseChartOptions(),
     });
     @endif
-</script>
+</x-chart-init>
 @endpush

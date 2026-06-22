@@ -9,7 +9,7 @@
       @endif
     </div>
   @endif
-  <div class="p-5">
+  <div class="min-w-0 p-5">
     {{ $slot }}
   </div>
 </div>

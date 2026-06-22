@@ -22,7 +22,7 @@ class InvoiceController extends Controller
     public function show(int $transactionId): View
     {
         $transaction = Transaction::query()
-            ->with(['latestInvoice', 'account', 'currency', 'contact', 'category'])
+            ->with(['latestInvoice', 'account', 'currency', 'contact', 'category', 'paymentMethod'])
             ->findOrFail($transactionId);
 
         if ($transaction->type === 'transfer') {
@@ -58,6 +58,17 @@ class InvoiceController extends Controller
 
         return back()->with('success', 'Public invoice link created. Expires in '.$days.' days.')
             ->with('invoice_public_url', route('invoices.public', $invoice->public_token));
+    }
+
+    public function revoke(int $transactionId): RedirectResponse
+    {
+        try {
+            $this->invoiceService->revokePublicLink($transactionId);
+        } catch (InvalidArgumentException $exception) {
+            return back()->withErrors(['form' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', 'Public invoice link revoked.');
     }
 
     public function publicShow(string $token): View

@@ -98,7 +98,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<x-chart-init>
     const colors = window.LedgerCharts.chartColors();
 
     new Chart(document.getElementById('cashFlowChart'), {
@@ -131,5 +131,5 @@
         },
         options: { ...window.LedgerCharts.baseChartOptions(), indexAxis: 'y' },
     });
-</script>
+</x-chart-init>
 @endpush

@@ -2,7 +2,7 @@
 
 @section('title', 'Security')
 @section('heading', 'Administration')
-@section('subheading', 'Security and two-factor authentication')
+@section('subheading', 'Security, sessions, and two-factor authentication')
 
 @section('content')
     @include('admin.partials.nav')
@@ -54,15 +54,90 @@
             @endif
         </x-panel>
 
-        <x-panel title="Session" subtitle="Stay signed in without frequent logins">
-            <p class="text-sm text-slate-600 dark:text-slate-400">
-                When you sign in with “Keep me signed in” checked, your session stays active for up to 30 days on this device.
-            </p>
-            <ul class="mt-4 list-inside list-disc space-y-2 text-sm text-slate-600 dark:text-slate-400">
+        <x-panel title="Security Tips" subtitle="Keep your account safe">
+            <ul class="list-inside list-disc space-y-2 text-sm text-slate-600 dark:text-slate-400">
                 <li>Use a strong, unique password for your account.</li>
                 <li>Enable 2FA if you access finances from shared or public devices.</li>
-                <li>Sign out when you finish on a device you do not trust.</li>
+                <li>Review active sessions below and sign out of devices you do not recognize.</li>
+                <li>When you sign in with “Keep me signed in” checked, your session stays active for up to
+                    @php
+                        $lifetimeMinutes = (int) config('session.lifetime');
+                        $lifetimeLabel = $lifetimeMinutes >= 1440
+                            ? round($lifetimeMinutes / 1440).' days'
+                            : ($lifetimeMinutes >= 60 ? round($lifetimeMinutes / 60).' hours' : $lifetimeMinutes.' minutes');
+                    @endphp
+                    {{ $lifetimeLabel }} on that device.
+                </li>
             </ul>
         </x-panel>
     </div>
+
+    <x-panel class="mt-6" title="Where You're Logged In" subtitle="Active sessions on your account">
+        @php
+            $otherSessions = $sessions->filter(fn (array $session): bool => ! $session['is_current']);
+        @endphp
+
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-slate-500">
+                {{ $sessions->count() }} active {{ \Illuminate\Support\Str::plural('session', $sessions->count()) }}
+            </p>
+
+            @if ($otherSessions->isNotEmpty())
+                <form method="POST" action="{{ route('account.security.sessions.logout-others') }}">
+                    @csrf
+                    <button type="submit" class="btn-secondary text-sm">Log out of all other sessions</button>
+                </form>
+            @endif
+        </div>
+
+        <div class="space-y-3">
+            @forelse ($sessions as $session)
+                <div class="rounded-xl border border-slate-200 p-4 dark:border-slate-800 {{ $session['is_current'] ? 'bg-brand-50 dark:bg-gray-700' : '' }}">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="font-medium text-slate-900 dark:text-slate-100">{{ $session['device_label'] }}</p>
+                                @if ($session['is_current'])
+                                    <span class="inline-flex rounded-full bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+                                        This device
+                                    </span>
+                                @endif
+                            </div>
+
+                            <dl class="mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-400">
+                                <div class="flex flex-wrap gap-x-2">
+                                    <dt class="font-medium text-slate-500 dark:text-slate-100">Last active: </dt>
+                                    <dd class="dark:text-slate-100">{{ $session['last_active_at']->diffForHumans() }} · {{ $session['last_active_at']->format('M j, Y g:i A') }}</dd>
+                                </div>
+                                @if ($session['ip_address'])
+                                    <div class="flex flex-wrap gap-x-2">
+                                        <dt class="font-medium text-slate-500 dark:text-slate-100">IP address: </dt>
+                                        <dd class="font-mono text-xs dark:text-slate-100">{{ $session['ip_address'] }}</dd>
+                                    </div>
+                                @endif
+                                @if ($session['user_agent'])
+                                    <div class="flex flex-wrap gap-x-2">
+                                        <dt class="font-medium text-slate-500 dark:text-slate-100">User agent: </dt>
+                                        <dd class="break-all text-xs text-slate-500 dark:text-slate-100">{{ $session['user_agent'] }}</dd>
+                                    </div>
+                                @endif
+                            </dl>
+                        </div>
+
+                        @unless ($session['is_current'])
+                            <form method="POST" action="{{ route('account.security.sessions.destroy', $session['id']) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-secondary !px-3 !py-1.5 text-xs">Log out</button>
+                            </form>
+                        @endunless
+                    </div>
+                </div>
+            @empty
+                <p class="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-800">
+                    No active sessions found. Sign in again if you expected to see your current session here.
+                </p>
+            @endforelse
+        </div>
+    </x-panel>
 @endsection

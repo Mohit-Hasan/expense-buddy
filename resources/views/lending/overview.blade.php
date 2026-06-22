@@ -35,8 +35,8 @@
 
         <x-panel title="Summary" subtitle="Portfolio at a glance">
             <div class="space-y-4">
-                <div class="flex items-center justify-between rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
-                    <span class="text-sm text-slate-500">Total outstanding</span>
+                <div class="flex items-center justify-between gap-3 rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
+                    <span class="shrink-0 text-sm text-slate-500">Total outstanding</span>
                     <span class="amount amount-lg amount-lending">{{ MoneyFormatter::format($overview['summary']['total_outstanding'], $baseCurrency) }}</span>
                 </div>
                 <div class="flex items-center justify-between rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
@@ -48,10 +48,18 @@
             </div>
         </x-panel>
     </div>
+
+    <x-panel class="mt-6" title="Overall Balance Trend" subtitle="Total outstanding across all contacts over time">
+        <x-balance-trend-panel
+            :chart="$overview['trend_chart']"
+            :period="$period"
+            label="Total outstanding"
+        />
+    </x-panel>
 @endsection
 
 @push('scripts')
-<script>
+<x-chart-init>
     const colors = window.LedgerCharts.chartColors();
     new Chart(document.getElementById('lendingOverviewChart'), {
         type: 'bar',
@@ -66,5 +74,5 @@
         },
         options: window.LedgerCharts.baseChartOptions({ scales: { y: { beginAtZero: true } } }),
     });
-</script>
+</x-chart-init>
 @endpush

@@ -13,6 +13,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PwaController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
@@ -46,6 +47,8 @@ Route::middleware(['auth', 'menu.permission'])->group(function (): void {
     Route::post('/account/security/enable', [AccountSecurityController::class, 'enable'])->name('account.security.enable');
     Route::post('/account/security/confirm', [AccountSecurityController::class, 'confirm'])->name('account.security.confirm');
     Route::post('/account/security/disable', [AccountSecurityController::class, 'disable'])->name('account.security.disable');
+    Route::delete('/account/security/sessions/{session}', [AccountSecurityController::class, 'destroySession'])->name('account.security.sessions.destroy');
+    Route::post('/account/security/sessions/logout-others', [AccountSecurityController::class, 'logoutOtherSessions'])->name('account.security.sessions.logout-others');
 
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
@@ -59,11 +62,14 @@ Route::middleware(['auth', 'menu.permission'])->group(function (): void {
         Route::get('/', [InvoiceController::class, 'show'])->name('show');
         Route::get('/pdf', [InvoiceController::class, 'download'])->name('pdf');
         Route::post('/share', [InvoiceController::class, 'share'])->name('share');
+        Route::post('/revoke', [InvoiceController::class, 'revoke'])->name('revoke');
     });
 
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
     Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::put('/accounts/{id}', [AccountController::class, 'update'])->name('accounts.update');
+    Route::post('/accounts/{id}/archive', [AccountController::class, 'archive'])->name('accounts.archive');
+    Route::post('/accounts/{id}/restore', [AccountController::class, 'restore'])->name('accounts.restore');
 
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
@@ -71,10 +77,17 @@ Route::middleware(['auth', 'menu.permission'])->group(function (): void {
     Route::post('/categories/{id}/archive', [CategoryController::class, 'archive'])->name('categories.archive');
     Route::post('/categories/{id}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
 
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
+    Route::put('/payment-methods/{id}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
+    Route::post('/payment-methods/{id}/archive', [PaymentMethodController::class, 'archive'])->name('payment-methods.archive');
+    Route::post('/payment-methods/{id}/restore', [PaymentMethodController::class, 'restore'])->name('payment-methods.restore');
+
     Route::redirect('/contacts', '/lending/people');
     Route::prefix('lending')->name('lending.')->group(function (): void {
         Route::get('/', [ContactController::class, 'overview'])->name('overview');
         Route::get('/ledger', [ContactController::class, 'ledger'])->name('ledger');
+        Route::get('/trend-chart', [ContactController::class, 'trendChart'])->name('trend-chart');
         Route::get('/people', [ContactController::class, 'index'])->name('people.index');
         Route::get('/people/create', [ContactController::class, 'create'])->name('people.create');
         Route::post('/people', [ContactController::class, 'store'])->name('people.store');
@@ -97,6 +110,8 @@ Route::middleware(['auth', 'menu.permission'])->group(function (): void {
         });
         Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
         Route::put('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/error-insights', [AdminController::class, 'errorInsights'])->name('error-insights');
+        Route::post('/error-insights/clear', [AdminController::class, 'clearErrorTracking'])->name('error-insights.clear');
         Route::get('/currencies', [AdminController::class, 'currencies'])->name('currencies');
         Route::post('/currencies', [AdminController::class, 'storeCurrency'])->name('currencies.store');
         Route::put('/currencies/{id}', [AdminController::class, 'updateCurrency'])->name('currencies.update');
@@ -109,7 +124,9 @@ Route::middleware(['auth', 'menu.permission'])->group(function (): void {
         Route::post('/roles', [AdminController::class, 'storeRole'])->name('roles.store');
         Route::put('/roles/{id}', [AdminController::class, 'updateRole'])->name('roles.update');
         Route::delete('/roles/{id}', [AdminController::class, 'destroyRole'])->name('roles.destroy');
-        Route::get('/backup', [AdminController::class, 'backupDatabase'])->name('backup');
+        Route::get('/backup', [AdminController::class, 'backup'])->name('backup');
+        Route::put('/backup', [AdminController::class, 'updateBackup'])->name('backup.update');
+        Route::get('/backup/download', [AdminController::class, 'backupDatabase'])->name('backup.download');
     });
 });
 

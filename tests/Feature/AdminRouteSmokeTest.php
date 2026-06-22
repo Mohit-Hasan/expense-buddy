@@ -40,8 +40,10 @@ class AdminRouteSmokeTest extends TestCase
             '/transfers/create',
             '/accounts',
             '/categories',
+            '/payment-methods',
             '/lending',
             '/lending/ledger',
+            '/lending/trend-chart?period=30d',
             '/lending/people',
             '/lending/people/create',
             '/lending/people/'.$contact->id.'/edit',
@@ -60,7 +62,7 @@ class AdminRouteSmokeTest extends TestCase
             $this->actingAs($this->admin)->get($uri)->assertOk();
         }
 
-        $this->actingAs($this->admin)->get('/admin/backup')->assertRedirect();
+        $this->actingAs($this->admin)->get('/admin/backup')->assertOk();
     }
 
     #[Test]

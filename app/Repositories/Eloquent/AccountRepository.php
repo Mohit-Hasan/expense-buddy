@@ -14,10 +14,29 @@ class AccountRepository implements AccountRepositoryInterface
     /**
      * @return Collection<int, Account>
      */
-    public function all(): Collection
+    public function all(?string $status = null): Collection
+    {
+        $query = Account::query()
+            ->with(['currency'])
+            ->withCount('transactions')
+            ->orderBy('status')
+            ->orderBy('account_title');
+
+        if ($status !== null && in_array($status, ['active', 'inactive'], true)) {
+            $query->where('status', $status);
+        }
+
+        return $query->get();
+    }
+
+    /**
+     * @return Collection<int, Account>
+     */
+    public function active(): Collection
     {
         return Account::query()
             ->with(['currency'])
+            ->where('status', 'active')
             ->orderBy('account_title')
             ->get();
     }

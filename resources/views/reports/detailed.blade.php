@@ -7,6 +7,7 @@
 @section('content')
     @php use App\Support\MoneyFormatter; @endphp
 
+    <div class="min-w-0 max-w-full">
     @include('reports.partials.nav')
 
     <x-panel title="Filters">
@@ -33,56 +34,65 @@
         </form>
     </x-panel>
 
-    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <x-stat-card label="Total Income" :value="MoneyFormatter::format($summary['total_income'], $baseCurrency)" color="emerald" />
         <x-stat-card label="Total Expense" :value="MoneyFormatter::format($summary['total_expense'], $baseCurrency)" color="rose" />
-        <x-stat-card label="Total Lending" :value="MoneyFormatter::format($summary['total_lending'], $baseCurrency)" color="violet" />
-        <x-stat-card label="Net Margin" :value="MoneyFormatter::format($summary['net_margin'], $baseCurrency)" color="brand" />
+        <x-stat-card label="Loans Out" :value="MoneyFormatter::format($summary['lending_out'], $baseCurrency)" color="violet" />
+        <x-stat-card label="Loans In" :value="MoneyFormatter::format($summary['lending_in'], $baseCurrency)" color="amber" />
+        <x-stat-card label="Repayments In" :value="MoneyFormatter::format($summary['lending_repay_in'], $baseCurrency)" color="brand" />
+        <x-stat-card label="Repayments Out" :value="MoneyFormatter::format($summary['lending_repay_out'], $baseCurrency)" />
     </div>
 
-    <div class="mt-6 grid gap-6 xl:grid-cols-3">
-        <x-panel class="xl:col-span-2" title="Time Series" subtitle="Income, expense, and lending over the selected period">
-            <div class="h-80">
+    <div class="mt-4">
+        <x-stat-card label="Net Margin (Income − Expense)" :value="MoneyFormatter::format($summary['net_margin'], $baseCurrency)" color="emerald" />
+    </div>
+
+    <div class="mt-6 grid min-w-0 gap-6 xl:grid-cols-3">
+        <x-panel class="min-w-0 xl:col-span-2" title="Time Series" subtitle="Income, expense, and lending (out/in includes repayments)">
+            <div class="h-80 max-w-full overflow-hidden">
                 <canvas id="timeSeriesChart"></canvas>
             </div>
         </x-panel>
 
-        <x-panel title="Type Breakdown" subtitle="Share of income, expense, and lending">
-            <div class="h-80">
+        <x-panel class="min-w-0" title="Type Breakdown" subtitle="Income, expense, and combined lending out/in">
+            <div class="h-80 max-w-full overflow-hidden">
                 <canvas id="typeBreakdownChart"></canvas>
             </div>
         </x-panel>
     </div>
 
-    <div class="mt-6 grid gap-6 lg:grid-cols-2">
-        <x-panel title="Income by Category" subtitle="Horizontal bar chart">
-            <div class="h-72">
+    <div class="mt-6 grid min-w-0 gap-6 lg:grid-cols-2">
+        <x-panel class="min-w-0" title="Income by Category" subtitle="Horizontal bar chart">
+            <div class="h-72 max-w-full overflow-hidden">
                 <canvas id="incomeCategoryBarChart"></canvas>
             </div>
         </x-panel>
-        <x-panel title="Expense by Category" subtitle="Horizontal bar chart">
-            <div class="h-72">
+        <x-panel class="min-w-0" title="Expense by Category" subtitle="Horizontal bar chart">
+            <div class="h-72 max-w-full overflow-hidden">
                 <canvas id="expenseCategoryBarChart"></canvas>
             </div>
         </x-panel>
     </div>
 
-    <x-panel class="mt-6" title="Categories Over Time" subtitle="Stacked bars — top categories per period">
-        <div class="h-96">
+    <x-panel class="mt-6 min-w-0" title="Categories Over Time" subtitle="Stacked bars — top categories per period">
+        <div class="h-96 max-w-full overflow-hidden">
             <canvas id="categoryByPeriodChart"></canvas>
         </div>
     </x-panel>
 
-    <div class="mt-6 grid gap-6 xl:grid-cols-2">
-        <x-panel title="Period Breakdown" subtitle="Totals grouped by {{ $filters['group_by'] }}">
-            <div class="overflow-x-auto">
+    <div class="mt-6 grid min-w-0 gap-6 pb-2 xl:grid-cols-2">
+        <x-panel class="min-w-0" title="Period Breakdown" subtitle="Totals grouped by {{ $filters['group_by'] }}">
+            <div class="overflow-x-auto -mx-5 px-5">
                 <table class="min-w-full">
                     <thead>
                         <tr class="border-b border-slate-200 dark:border-slate-800">
                             <th class="th">Period</th>
                             <th class="th">Income</th>
                             <th class="th">Expense</th>
-                            <th class="th">Lending</th>
+                            <th class="th">Loans Out</th>
+                            <th class="th">Loans In</th>
+                            <th class="th">Repay In</th>
+                            <th class="th">Repay Out</th>
                             <th class="th">Net</th>
                         </tr>
                     </thead>
@@ -92,19 +102,22 @@
                                 <td class="td font-medium">{{ $row->period }}</td>
                                 <td class="td font-mono text-emerald-600">{{ MoneyFormatter::format($row->total_income, $baseCurrency) }}</td>
                                 <td class="td font-mono text-rose-600">{{ MoneyFormatter::format($row->total_expense, $baseCurrency) }}</td>
-                                <td class="td font-mono text-violet-600">{{ MoneyFormatter::format($row->total_lending, $baseCurrency) }}</td>
+                                <td class="td font-mono text-violet-600">{{ MoneyFormatter::format($row->lending_out, $baseCurrency) }}</td>
+                                <td class="td font-mono text-amber-600">{{ MoneyFormatter::format($row->lending_in, $baseCurrency) }}</td>
+                                <td class="td font-mono text-brand-600">{{ MoneyFormatter::format($row->lending_repay_in, $baseCurrency) }}</td>
+                                <td class="td font-mono text-slate-600 dark:text-slate-300">{{ MoneyFormatter::format($row->lending_repay_out, $baseCurrency) }}</td>
                                 <td class="td font-mono font-semibold">{{ MoneyFormatter::format($row->net_margin, $baseCurrency) }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">No data for this range.</td></tr>
+                            <tr><td colspan="8" class="px-4 py-8 text-center text-sm text-slate-500">No data for this range.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </x-panel>
 
-        <x-panel title="Category Breakdown" subtitle="All categories in range">
-            <div class="overflow-x-auto">
+        <x-panel class="min-w-0" title="Category Breakdown" subtitle="All categories in range">
+            <div class="overflow-x-auto -mx-5 px-5">
                 <table class="min-w-full">
                     <thead>
                         <tr class="border-b border-slate-200 dark:border-slate-800">
@@ -128,10 +141,11 @@
             </div>
         </x-panel>
     </div>
+    </div>
 @endsection
 
 @push('scripts')
-<script>
+<x-chart-init>
     const colors = window.LedgerCharts.chartColors();
 
     new Chart(document.getElementById('timeSeriesChart'), {
@@ -141,7 +155,8 @@
             datasets: [
                 { label: 'Income', data: @json($timeSeries['income']), backgroundColor: colors.income + 'cc', borderRadius: 4 },
                 { label: 'Expense', data: @json($timeSeries['expense']), backgroundColor: colors.expense + 'cc', borderRadius: 4 },
-                { label: 'Lending', data: @json($timeSeries['lending']), backgroundColor: colors.transfer + '99', borderRadius: 4 },
+                { label: 'Lending Out', data: @json($timeSeries['lending_flow_out']), backgroundColor: colors.transfer + 'cc', borderRadius: 4 },
+                { label: 'Lending In', data: @json($timeSeries['lending_flow_in']), backgroundColor: colors.palette[2] + 'cc', borderRadius: 4 },
                 { label: 'Net Margin', data: @json($timeSeries['margin']), type: 'line', borderColor: colors.palette[1], tension: 0.35, fill: false },
             ],
         },
@@ -154,7 +169,12 @@
             labels: @json($typeBreakdown['labels']),
             datasets: [{
                 data: @json($typeBreakdown['values']),
-                backgroundColor: [colors.income, colors.expense, colors.transfer],
+                backgroundColor: [
+                    colors.income,
+                    colors.expense,
+                    colors.transfer,
+                    colors.palette[2],
+                ],
                 borderWidth: 0,
             }],
         },
@@ -202,5 +222,5 @@
             },
         }),
     });
-</script>
+</x-chart-init>
 @endpush

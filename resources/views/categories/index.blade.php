@@ -2,7 +2,7 @@
 
 @section('title', 'Categories')
 @section('heading', 'Transaction Categories')
-@section('subheading', 'Organize income and expense labels — archive instead of delete to preserve history')
+@section('subheading', 'Income and expense labels')
 
 @section('actions')
     <x-form-modal-trigger
@@ -12,7 +12,7 @@
             'method' => 'POST',
             'fields' => ['name' => '', 'type' => 'expense', 'status' => 'active'],
         ]"
-        class="btn-primary"
+        class="btn-primary whitespace-nowrap"
     >
         <x-ming-icon name="system.add" class="h-4 w-4" />
         Add Category
@@ -26,7 +26,7 @@
         <x-stat-card label="Archived" :value="(string) $stats['archived']" color="rose" />
     </div>
 
-    <x-panel class="mt-6" title="Category List" :subtitle="$categories->count().' shown'">
+    <x-panel class="mt-6" title="Category List" subtitle="Archive instead of delete to preserve history">
         <form method="GET" class="mb-5 grid gap-3 sm:grid-cols-4">
             <select name="type" class="input">
                 <option value="">All types</option>
