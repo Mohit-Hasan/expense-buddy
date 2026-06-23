@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Services\DatabaseBackupService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class RunScheduledBackupCommand extends Command
 {
@@ -15,14 +16,25 @@ class RunScheduledBackupCommand extends Command
 
     public function handle(DatabaseBackupService $backupService): int
     {
-        if ($backupService->runScheduledBackup()) {
-            $this->info('Scheduled backup emailed successfully.');
+        try {
+            $this->line('Database: '.$backupService->connectionLabel());
+
+            if ($backupService->runScheduledBackup()) {
+                $this->info('Scheduled backup emailed successfully.');
+
+                return self::SUCCESS;
+            }
+
+            $this->line('Scheduler checked; no backup was due.');
 
             return self::SUCCESS;
+        } catch (\Throwable $exception) {
+            Log::error('Scheduled backup command failed: '.$exception->getMessage(), [
+                'exception' => $exception,
+            ]);
+            $this->error('Scheduled backup command failed: '.$exception->getMessage());
+
+            return self::FAILURE;
         }
-
-        $this->line('No scheduled backup was due.');
-
-        return self::SUCCESS;
     }
 }

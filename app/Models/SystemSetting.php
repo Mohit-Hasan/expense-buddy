@@ -16,6 +16,7 @@ class SystemSetting extends Model
         'system_name',
         'system_logo',
         'default_currency_id',
+        'timezone',
         'allow_negative_balances',
         'mail_driver',
         'mail_host',

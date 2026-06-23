@@ -48,6 +48,18 @@
                     <p class="mt-1 text-xs text-slate-500">Dashboard totals and reports convert other currencies to this base. Account balances stay in their native currency.</p>
                 </div>
 
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">Application Timezone</label>
+                    <select name="timezone" class="input" data-search-select data-placeholder="Select timezone" data-search-placeholder="Search timezones…" required>
+                        @foreach ($timezones as $identifier => $label)
+                            <option value="{{ $identifier }}" @selected(old('timezone', $settings->timezone ?? config('app.timezone')) === $identifier)>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-slate-500">Dates, reports, backups, and scheduled tasks use this timezone.</p>
+                </div>
+
                 <label class="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="allow_negative_balances" value="1" @checked(old('allow_negative_balances', $settings->allow_negative_balances)) class="rounded border-slate-300 text-brand-600">
                     Allow negative account balances
@@ -69,6 +81,8 @@
                 <div>
                     <div class="text-lg font-bold">{{ $settings->system_name }}</div>
                     <div class="text-sm text-slate-500">Base: {{ $settings->defaultCurrency?->code ?? '—' }}</div>
+                    <div class="text-sm text-slate-500">Timezone: {{ $settings->timezone ?? config('app.timezone') }}</div>
+                    <div class="text-xs text-slate-400">{{ now()->format('M j, Y g:i A T') }}</div>
                 </div>
             </div>
         </x-panel>

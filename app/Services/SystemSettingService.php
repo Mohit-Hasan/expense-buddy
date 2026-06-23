@@ -31,6 +31,7 @@ class SystemSettingService
             $settings = SystemSetting::query()->create([
                 'system_name' => Brand::name(),
                 'default_currency_id' => $defaultCurrency?->id,
+                'timezone' => (string) config('app.timezone', 'UTC'),
                 'allow_negative_balances' => (bool) config('ledger.allow_negative_balances', false),
             ]);
         }
@@ -63,6 +64,10 @@ class SystemSettingService
 
         if (! empty($data['default_currency_id'])) {
             $this->setDefaultCurrency($settings, (int) $data['default_currency_id']);
+        }
+
+        if (isset($data['timezone'])) {
+            $settings->timezone = (string) $data['timezone'];
         }
 
         if (isset($data['mail_driver'])) {
@@ -134,9 +139,23 @@ class SystemSettingService
 
         $settings->save();
 
-        config(['ledger.allow_negative_balances' => $settings->allow_negative_balances]);
+        $this->applyRuntimeConfig($settings);
 
         return $settings->fresh(['defaultCurrency']);
+    }
+
+    public function applyRuntimeConfig(SystemSetting $settings): void
+    {
+        config(['ledger.allow_negative_balances' => $settings->allow_negative_balances]);
+
+        $timezone = $settings->timezone ?: (string) config('app.timezone', 'UTC');
+
+        if (in_array($timezone, timezone_identifiers_list(), true)) {
+            config(['app.timezone' => $timezone]);
+            date_default_timezone_set($timezone);
+        }
+
+        $this->mailConfigService->applyFromSettings($settings);
     }
 
     private function setDefaultCurrency(SystemSetting $settings, int $currencyId): void

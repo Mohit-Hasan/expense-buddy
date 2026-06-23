@@ -63,6 +63,7 @@ class InstallService
                 'system_name' => $data['system_name'] ?? Brand::name(),
                 'system_logo' => $logoPath,
                 'default_currency_id' => $currency->id,
+                'timezone' => (string) config('app.timezone', 'UTC'),
                 'allow_negative_balances' => (bool) ($data['allow_negative_balances'] ?? false),
             ]);
 
