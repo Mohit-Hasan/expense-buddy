@@ -51,6 +51,18 @@ class DatabaseBackupService
         };
     }
 
+    public function connectionLabel(): string
+    {
+        $driver = $this->driver();
+        $database = (string) config("database.connections.{$driver}.database");
+
+        if ($driver === 'sqlite') {
+            return 'SQLite · '.basename($database);
+        }
+
+        return strtoupper($driver).' · '.$database;
+    }
+
     public function generateSql(): string
     {
         if ($this->isMysql()) {
@@ -124,6 +136,7 @@ class DatabaseBackupService
         $lastSuccess = $settings->backup_last_success_at;
 
         return match ($settings->backup_frequency) {
+            'daily' => $this->isDailyDue($lastSuccess),
             'monthly' => $this->isMonthlyDue($settings, $lastSuccess),
             'custom' => $this->isCustomIntervalDue($settings, $lastSuccess),
             default => $this->isWeeklyDue($settings, $lastSuccess),
@@ -134,13 +147,38 @@ class DatabaseBackupService
     {
         $settings = $this->systemSettingService->get();
         $settings->update(['backup_last_run_at' => now()]);
+        $settings = $settings->fresh();
 
         if (! $this->shouldRunScheduledBackup($settings)) {
             return false;
         }
 
+        return $this->sendBackupEmailAndRecordSuccess($settings);
+    }
+
+    public function runManualEmailBackup(): void
+    {
+        $settings = $this->systemSettingService->get();
+
+        if ($settings->backup_email === null || $settings->backup_email === '') {
+            throw new RuntimeException('Backup email address is not configured.');
+        }
+
+        if (! $this->isSupported()) {
+            throw new RuntimeException('Database backup is only supported for MySQL and SQLite connections.');
+        }
+
+        $settings->update(['backup_last_run_at' => now()]);
+
+        if (! $this->sendBackupEmailAndRecordSuccess($settings->fresh())) {
+            throw new RuntimeException('Backup email could not be sent. Check SMTP settings under Administration → Settings.');
+        }
+    }
+
+    private function sendBackupEmailAndRecordSuccess(SystemSetting $settings): bool
+    {
         try {
-            $this->emailBackup($settings->fresh());
+            $this->emailBackup($settings);
             $settings->update(['backup_last_success_at' => now()]);
 
             return true;
@@ -231,10 +269,19 @@ class DatabaseBackupService
         return $output;
     }
 
+    private function isDailyDue(?\Illuminate\Support\Carbon $lastSuccess): bool
+    {
+        if ($lastSuccess === null) {
+            return true;
+        }
+
+        return ! $lastSuccess->isToday();
+    }
+
     private function isWeeklyDue(SystemSetting $settings, ?\Illuminate\Support\Carbon $lastSuccess): bool
     {
         if ($lastSuccess === null) {
-            return (int) now()->dayOfWeek === (int) $settings->backup_day;
+            return true;
         }
 
         if ($lastSuccess->diffInDays(now()) < 7) {

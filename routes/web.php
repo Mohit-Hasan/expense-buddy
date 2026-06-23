@@ -127,6 +127,7 @@ Route::middleware(['auth', 'menu.permission'])->group(function (): void {
         Route::get('/backup', [AdminController::class, 'backup'])->name('backup');
         Route::put('/backup', [AdminController::class, 'updateBackup'])->name('backup.update');
         Route::get('/backup/download', [AdminController::class, 'backupDatabase'])->name('backup.download');
+        Route::post('/backup/run', [AdminController::class, 'runBackupEmail'])->name('backup.run');
     });
 });
 

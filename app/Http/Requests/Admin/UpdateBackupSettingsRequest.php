@@ -21,8 +21,8 @@ class UpdateBackupSettingsRequest extends FormRequest
     {
         return [
             'backup_enabled' => ['nullable', 'boolean'],
-            'backup_frequency' => ['required', 'string', Rule::in(['weekly', 'monthly', 'custom'])],
-            'backup_day' => ['required', 'integer', 'min:0', 'max:365'],
+            'backup_frequency' => ['required', 'string', Rule::in(['daily', 'weekly', 'monthly', 'custom'])],
+            'backup_day' => ['required_unless:backup_frequency,daily', 'integer', 'min:0', 'max:365'],
             'backup_email' => ['nullable', 'email', 'max:255'],
         ];
     }

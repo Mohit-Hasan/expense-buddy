@@ -46,6 +46,7 @@ class UpdateSystemSettingsRequest extends FormRequest
             'settings_section' => ['required', 'in:general'],
             'system_name' => ['required', 'string', 'max:120'],
             'default_currency_id' => ['required', 'integer', 'exists:currencies,id'],
+            'timezone' => ['required', 'string', 'timezone:all'],
             'allow_negative_balances' => ['sometimes', 'boolean'],
             'error_tracking_enabled' => ['sometimes', 'boolean'],
             'system_logo' => ['nullable', 'image', 'max:2048'],

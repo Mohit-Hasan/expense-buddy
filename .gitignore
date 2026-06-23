@@ -18,6 +18,8 @@ yarn-error.log
 /.vscode
 /node_modules
 /playwright-report/
+/playwright-report-install/
 /test-results/
+/test-results-install/
 public/hot
 QA_NOTES.txt

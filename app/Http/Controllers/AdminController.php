@@ -15,6 +15,7 @@ use App\Models\Currency;
 use App\Models\Role;
 use App\Models\User;
 use App\Http\Requests\Admin\UpdateBackupSettingsRequest;
+use App\Support\TimezoneList;
 use App\Services\CurrencyManagementService;
 use App\Services\DatabaseBackupService;
 use App\Services\RouteErrorTracker;
@@ -44,6 +45,7 @@ class AdminController extends Controller
         return view('admin.settings', [
             'settings' => $settings,
             'currencies' => Currency::query()->orderBy('name')->get(),
+            'timezones' => TimezoneList::options(),
         ]);
     }
 
@@ -235,6 +237,7 @@ class AdminController extends Controller
             'settings' => $this->systemSettingService->get(),
             'backupSupported' => $this->databaseBackupService->isSupported(),
             'driverLabel' => $this->databaseBackupService->driverLabel(),
+            'databaseIdentity' => $this->databaseBackupService->connectionLabel(),
         ]);
     }
 
@@ -249,6 +252,17 @@ class AdminController extends Controller
     {
         try {
             return $this->databaseBackupService->downloadResponse();
+        } catch (\Throwable $exception) {
+            return back()->withErrors(['form' => $exception->getMessage()]);
+        }
+    }
+
+    public function runBackupEmail(): RedirectResponse
+    {
+        try {
+            $this->databaseBackupService->runManualEmailBackup();
+
+            return back()->with('success', 'Backup email sent successfully.');
         } catch (\Throwable $exception) {
             return back()->withErrors(['form' => $exception->getMessage()]);
         }

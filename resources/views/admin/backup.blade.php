@@ -31,16 +31,17 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label class="label">Frequency</label>
-                            <select name="backup_frequency" class="input" data-search-select="off" required>
+                            <select name="backup_frequency" class="input" data-search-select="off" data-backup-frequency required>
+                                <option value="daily" @selected(old('backup_frequency', $settings->backup_frequency) === 'daily')>Daily</option>
                                 <option value="weekly" @selected(old('backup_frequency', $settings->backup_frequency) === 'weekly')>Weekly</option>
                                 <option value="monthly" @selected(old('backup_frequency', $settings->backup_frequency) === 'monthly')>Monthly</option>
                                 <option value="custom" @selected(old('backup_frequency', $settings->backup_frequency) === 'custom')>Custom interval (days)</option>
                             </select>
                         </div>
-                        <div>
+                        <div data-backup-day-field>
                             <label class="label">Schedule day</label>
                             <input type="number" name="backup_day" min="0" max="365" value="{{ old('backup_day', $settings->backup_day) }}" class="input" required>
-                            <p class="mt-1 text-xs text-slate-500">Weekly: 0=Sun … 6=Sat. Monthly: day 1–28. Custom: interval in days.</p>
+                            <p class="mt-1 text-xs text-slate-500" data-backup-day-help>Weekly: 0=Sun … 6=Sat. Monthly: day 1–28. Custom: interval in days. Daily ignores this field.</p>
                         </div>
                     </div>
 
@@ -51,6 +52,14 @@
 
                     <button type="submit" class="btn-primary">Save Backup Schedule</button>
                 </form>
+
+                @if ($backupSupported)
+                    <form method="POST" action="{{ route('admin.backup.run') }}" class="mt-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+                        @csrf
+                        <p class="mb-3 text-sm text-slate-500">Send a backup email now using the address above. This updates “Last successful backup” when SMTP is configured.</p>
+                        <button type="submit" class="btn-secondary">Send Backup Email Now</button>
+                    </form>
+                @endif
             </x-panel>
 
             <x-panel title="Scheduler Status">
@@ -60,15 +69,19 @@
                         <dd class="font-medium">{{ $settings->backup_last_run_at?->format('M j, Y g:i A') ?? 'Never' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-slate-500">Last successful backup</dt>
+                        <dt class="text-slate-500">Last successful email backup</dt>
                         <dd class="font-medium">{{ $settings->backup_last_success_at?->format('M j, Y g:i A') ?? 'Never' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-slate-500">Database</dt>
+                        <dt class="text-slate-500">Active database</dt>
+                        <dd class="font-medium">{{ $databaseIdentity }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-slate-500">Backup support</dt>
                         <dd class="font-medium">{{ $backupSupported ? $driverLabel.' ready' : 'Unsupported driver' }}</dd>
                     </div>
                 </dl>
-                <p class="mt-4 text-xs text-slate-500">Cron should run <code class="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">php artisan schedule:run</code> every minute. Backups email as gzip-compressed SQL when due.</p>
+                <p class="mt-4 text-xs text-slate-500">Cron must run <code class="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">php artisan schedule:run</code> every minute from this project folder using the same <code class="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">.env</code> as this page (<strong>{{ $databaseIdentity }}</strong>). Use <code class="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">http://localhost:8000</code> for local MySQL — port <code class="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">8765</code> is the E2E SQLite test server.</p>
             </x-panel>
         </div>
     </div>
@@ -85,6 +98,21 @@
     </div>
 
     <script>
+        const backupFrequencySelect = document.querySelector('[data-backup-frequency]');
+        const backupDayField = document.querySelector('[data-backup-day-field]');
+
+        const syncBackupDayField = () => {
+            if (!backupFrequencySelect || !backupDayField) {
+                return;
+            }
+
+            const isDaily = backupFrequencySelect.value === 'daily';
+            backupDayField.classList.toggle('hidden', isDaily);
+        };
+
+        backupFrequencySelect?.addEventListener('change', syncBackupDayField);
+        syncBackupDayField();
+
         document.querySelectorAll('[data-backup-tab]').forEach((button) => {
             button.addEventListener('click', () => {
                 const tab = button.dataset.backupTab;

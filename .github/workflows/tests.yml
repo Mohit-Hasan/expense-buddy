@@ -81,9 +81,10 @@ jobs:
       - name: Run Playwright install wizard test
         id: playwright_install
         continue-on-error: true
-        run: PLAYWRIGHT_INCLUDE_INSTALL=1 npx playwright test e2e/00-install.spec.ts
+        run: PLAYWRIGHT_INCLUDE_INSTALL=1 npx playwright test e2e/00-install.spec.ts --output=test-results-install
         env:
           PLAYWRIGHT_BASE_URL: http://127.0.0.1:8765
+          PLAYWRIGHT_HTML_REPORT: playwright-report-install
 
       - name: Upload Playwright artifacts
         if: always()
@@ -92,7 +93,9 @@ jobs:
           name: playwright-artifacts
           path: |
             playwright-report/
+            playwright-report-install/
             test-results/
+            test-results-install/
           if-no-files-found: warn
           retention-days: 14
 
