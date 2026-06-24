@@ -113,7 +113,7 @@ export async function createCategory(
 }
 
 export async function createLendingContact(page: Page, name: string, email?: string): Promise<void> {
-    await page.goto('/lending/people/create');
+    await page.goto('/contacts/create');
     await page.locator('input[name="name"]').fill(name);
 
     if (email) {
@@ -179,13 +179,13 @@ export async function recordTransfer(
 }
 
 export async function readContactOutstanding(page: Page, contactName: string): Promise<number> {
-    await page.goto('/lending/ledger');
-    await selectOptionContaining(page, 'select[name="contact_id"]', contactName);
-    await page.getByRole('button', { name: 'Apply' }).click();
+    await page.goto('/contacts');
+    const card = page.locator('.person-card').filter({ hasText: contactName });
+    await card.getByRole('link', { name: 'Activity' }).click();
 
-    await expect(page.getByText(contactName).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: contactName })).toBeVisible();
 
-    const stat = page.locator('.stat-card').filter({ hasText: 'Outstanding Balance' });
+    const stat = page.locator('.stat-card').filter({ hasText: 'Lending Outstanding' });
     await expect(stat).toBeVisible();
 
     return parseMoneyAmount(await stat.locator('.amount-lg').innerText());
@@ -199,10 +199,10 @@ export const authenticatedRoutes = [
     '/accounts',
     '/categories',
     '/payment-methods',
+    '/contacts',
+    '/contacts/create',
     '/lending',
     '/lending/ledger',
-    '/lending/people',
-    '/lending/people/create',
     '/reports/income-vs-expense',
     '/reports/categorized',
     '/reports/detailed',

@@ -3,6 +3,9 @@
     'period',
     'contactId' => null,
     'label' => 'Outstanding',
+    'metric' => 'lending',
+    'color' => 'income',
+    'emptyMessage' => 'No linked lending activity for this period.',
 ])
 
 <div
@@ -11,6 +14,8 @@
     data-period="{{ $period }}"
     data-contact-id="{{ $contactId }}"
     data-label="{{ $label }}"
+    data-metric="{{ $metric }}"
+    data-color="{{ $color }}"
     {{ $attributes }}
 >
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -41,7 +46,7 @@
             data-trend-empty
             @class(['py-10 text-center text-sm text-slate-500', 'hidden' => count($chart['labels']) > 0])
         >
-            No linked lending activity for this period.
+            {{ $emptyMessage }}
         </p>
     </div>
 

@@ -22,8 +22,8 @@ class DashboardService
         $baseCurrency = MoneyFormatter::baseCurrency();
         $baseRate = (string) ($baseCurrency?->exchange_rate ?? '1.0000');
 
-        $totalIncome = $this->sumIncome();
-        $totalExpense = $this->sumExpense();
+        $totalIncome = $this->sumInBase('income');
+        $totalExpense = $this->sumInBase('expense');
         $chartData = $this->buildSixMonthChart();
         $currencyBreakdown = $this->buildCurrencyBreakdown($baseRate);
         $recentTransactions = $this->recentTransactions();
@@ -50,18 +50,14 @@ class DashboardService
         ];
     }
 
-    private function sumIncome(): string
+    private function sumInBase(string $type): string
     {
-        return bcadd((string) (Transaction::query()
-            ->where('type', 'income')
-            ->sum('amount') ?? '0'), '0', 4);
-    }
+        $expression = MoneyFormatter::baseAmountExpression();
 
-    private function sumExpense(): string
-    {
         return bcadd((string) (Transaction::query()
-            ->where('type', 'expense')
-            ->sum('amount') ?? '0'), '0', 4);
+            ->where('type', $type)
+            ->selectRaw("COALESCE(SUM({$expression}), 0) as total_base")
+            ->value('total_base') ?? '0'), '0', 4);
     }
 
     /**
@@ -81,15 +77,19 @@ class DashboardService
 
             $labels[] = $month->format('M Y');
 
+            $baseExpression = MoneyFormatter::baseAmountExpression();
+
             $monthIncome = bcadd((string) (Transaction::query()
                 ->where('type', 'income')
                 ->whereBetween('transaction_date', [$start, $end])
-                ->sum('amount') ?? '0'), '0', 4);
+                ->selectRaw("COALESCE(SUM({$baseExpression}), 0) as total_base")
+                ->value('total_base') ?? '0'), '0', 4);
 
             $monthExpense = bcadd((string) (Transaction::query()
                 ->where('type', 'expense')
                 ->whereBetween('transaction_date', [$start, $end])
-                ->sum('amount') ?? '0'), '0', 4);
+                ->selectRaw("COALESCE(SUM({$baseExpression}), 0) as total_base")
+                ->value('total_base') ?? '0'), '0', 4);
 
             $income[] = $monthIncome;
             $expense[] = $monthExpense;
@@ -147,9 +147,10 @@ class DashboardService
      */
     private function typeDistribution(): array
     {
-        $income = bcadd((string) (Transaction::query()->where('type', 'income')->sum('amount') ?? '0'), '0', 4);
-        $expense = bcadd((string) (Transaction::query()->where('type', 'expense')->sum('amount') ?? '0'), '0', 4);
-        $transfer = bcadd((string) (Transaction::query()->where('type', 'transfer')->sum('amount') ?? '0'), '0', 4);
+        $baseExpression = MoneyFormatter::baseAmountExpression();
+        $income = bcadd((string) (Transaction::query()->where('type', 'income')->selectRaw("COALESCE(SUM({$baseExpression}), 0) as total_base")->value('total_base') ?? '0'), '0', 4);
+        $expense = bcadd((string) (Transaction::query()->where('type', 'expense')->selectRaw("COALESCE(SUM({$baseExpression}), 0) as total_base")->value('total_base') ?? '0'), '0', 4);
+        $transfer = bcadd((string) (Transaction::query()->where('type', 'transfer')->selectRaw("COALESCE(SUM({$baseExpression}), 0) as total_base")->value('total_base') ?? '0'), '0', 4);
 
         return [
             'labels' => ['Income', 'Expense', 'Transfers'],

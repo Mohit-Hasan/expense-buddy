@@ -1,6 +1,3 @@
-/**
- * Transaction form: lending requires contact; category/payment hidden for lending.
- */
 export function initTransactionForm() {
     const typeSelect = document.querySelector('select[name="type"]');
     const contactWrap = document.getElementById('contact-field-wrap');
@@ -19,8 +16,12 @@ export function initTransactionForm() {
     const sync = () => {
         const isLending = isLendingType(typeSelect.value);
 
+        if (contactWrap) {
+            contactWrap.classList.remove('hidden');
+        }
+
         if (contactHint) {
-            contactHint.textContent = isLending ? '(required)' : '(optional source link)';
+            contactHint.textContent = isLending ? '(required)' : '(optional — for tracking)';
         }
 
         if (contactSelect) {

@@ -60,6 +60,11 @@ final class MoneyFormatter
         return bcdiv($amount, $exchangeRate, 4);
     }
 
+    public static function baseAmountExpression(string $amountColumn = 'amount', string $rateColumn = 'rate_at_transaction'): string
+    {
+        return "({$amountColumn} / {$rateColumn})";
+    }
+
     public static function baseCurrency(): ?Currency
     {
         try {

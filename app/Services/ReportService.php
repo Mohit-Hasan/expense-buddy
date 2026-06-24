@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Transaction;
 use App\Support\MoneyFormatter;
+use App\Support\TransactionType;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -25,10 +26,12 @@ class ReportService
         $periodExpression = $this->periodExpression();
         $cutoff = now()->subMonths($months)->startOfMonth()->toDateString();
 
+        $baseExpression = MoneyFormatter::baseAmountExpression();
+
         $rows = Transaction::query()
             ->selectRaw("{$periodExpression} as period")
-            ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income")
-            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expense")
+            ->selectRaw("SUM(CASE WHEN type = 'income' THEN {$baseExpression} ELSE 0 END) as total_income")
+            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN {$baseExpression} ELSE 0 END) as total_expense")
             ->where('transaction_date', '>=', $cutoff)
             ->groupBy('period')
             ->orderBy('period')
@@ -61,13 +64,15 @@ class ReportService
      */
     public function categorizedBreakdown(?string $dateFrom = null, ?string $dateTo = null): array
     {
+        $baseExpression = MoneyFormatter::baseAmountExpression('transactions.amount', 'transactions.rate_at_transaction');
+
         $query = Transaction::query()
             ->select([
                 'transaction_categories.id as category_id',
                 'transaction_categories.name as category_name',
                 'transaction_categories.type as category_type',
             ])
-            ->selectRaw('SUM(transactions.amount) as total_amount')
+            ->selectRaw("SUM({$baseExpression}) as total_amount")
             ->leftJoin('transaction_categories', 'transaction_categories.id', '=', 'transactions.category_id')
             ->whereIn('transactions.type', ['income', 'expense'])
             ->groupBy(
@@ -130,7 +135,7 @@ class ReportService
 
         $transactions = Transaction::query()
             ->with(['account.currency', 'category', 'paymentMethod', 'currency', 'contact'])
-            ->whereNotNull('contact_id')
+            ->whereIn('type', TransactionType::lending())
             ->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->limit(50)
@@ -159,7 +164,7 @@ class ReportService
                 'values' => $contacts->take(8)->pluck('current_balance')->map(fn ($v) => (string) $v)->values()->all(),
             ],
             'trend_chart' => $this->balanceTrendChartBuilder->build(
-                Transaction::query()->whereNotNull('contact_id'),
+                Transaction::query()->whereIn('type', TransactionType::lending()),
                 $period,
             ),
         ];
@@ -177,6 +182,7 @@ class ReportService
         $transactions = Transaction::query()
             ->with(['account.currency', 'category', 'paymentMethod', 'currency'])
             ->where('contact_id', $contactId)
+            ->whereIn('type', TransactionType::lending())
             ->orderBy('transaction_date')
             ->orderBy('id')
             ->get();
@@ -187,7 +193,9 @@ class ReportService
         );
 
         $chart = $this->balanceTrendChartBuilder->build(
-            Transaction::query()->where('contact_id', $contactId),
+            Transaction::query()
+                ->where('contact_id', $contactId)
+                ->whereIn('type', TransactionType::lending()),
             $period,
         );
 
@@ -201,6 +209,75 @@ class ReportService
                 'current_balance' => $currentBalance,
             ],
             'chart' => $chart,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     transactions: Collection<int, Transaction>,
+     *     summary: array<string, string>,
+     *     chart: array{labels: list<string>, values: list<string>, meta: array<string, mixed>}
+     * }
+     */
+    public function contactActivityLedger(int $contactId, string $period = 'lifetime'): array
+    {
+        $transactions = Transaction::query()
+            ->with(['account.currency', 'category', 'paymentMethod', 'currency'])
+            ->where('contact_id', $contactId)
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $incomeBase = '0.0000';
+        $expenseBase = '0.0000';
+
+        foreach ($transactions as $transaction) {
+            $baseAmount = MoneyFormatter::convertToBase(
+                (string) $transaction->amount,
+                (string) $transaction->rate_at_transaction,
+            );
+
+            if ($transaction->type === 'income') {
+                $incomeBase = bcadd($incomeBase, $baseAmount, 4);
+            } elseif ($transaction->type === 'expense') {
+                $expenseBase = bcadd($expenseBase, $baseAmount, 4);
+            }
+        }
+
+        $chart = $this->balanceTrendChartBuilder->build(
+            Transaction::query()
+                ->where('contact_id', $contactId)
+                ->whereIn('type', TransactionType::lending()),
+            $period,
+        );
+
+        $incomeChart = $this->balanceTrendChartBuilder->buildPeriodBaseTrend(
+            Transaction::query()
+                ->where('contact_id', $contactId)
+                ->where('type', 'income'),
+            $period,
+        );
+
+        $expenseChart = $this->balanceTrendChartBuilder->buildPeriodBaseTrend(
+            Transaction::query()
+                ->where('contact_id', $contactId)
+                ->where('type', 'expense'),
+            $period,
+        );
+
+        $currentBalance = (string) (Contact::query()->whereKey($contactId)->value('current_balance') ?? '0.0000');
+
+        return [
+            'transactions' => $transactions,
+            'summary' => [
+                'income_base' => $incomeBase,
+                'expense_base' => $expenseBase,
+                'current_balance' => $currentBalance,
+                'transaction_count' => (string) $transactions->count(),
+            ],
+            'chart' => $chart,
+            'income_chart' => $incomeChart,
+            'expense_chart' => $expenseChart,
         ];
     }
 
@@ -269,15 +346,16 @@ class ReportService
     ): array {
         $groupBy = in_array($groupBy, ['day', 'week', 'month'], true) ? $groupBy : 'month';
         $periodExpression = $this->groupByExpression($groupBy);
+        $baseExpression = MoneyFormatter::baseAmountExpression();
 
         $timeQuery = Transaction::query()
             ->selectRaw("{$periodExpression} as period")
-            ->selectRaw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income")
-            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expense")
-            ->selectRaw("SUM(CASE WHEN type IN ('lending_out','lending') THEN amount ELSE 0 END) as lending_out")
-            ->selectRaw("SUM(CASE WHEN type = 'lending_in' THEN amount ELSE 0 END) as lending_in")
-            ->selectRaw("SUM(CASE WHEN type = 'lending_repay_in' THEN amount ELSE 0 END) as lending_repay_in")
-            ->selectRaw("SUM(CASE WHEN type = 'lending_repay_out' THEN amount ELSE 0 END) as lending_repay_out")
+            ->selectRaw("SUM(CASE WHEN type = 'income' THEN {$baseExpression} ELSE 0 END) as total_income")
+            ->selectRaw("SUM(CASE WHEN type = 'expense' THEN {$baseExpression} ELSE 0 END) as total_expense")
+            ->selectRaw("SUM(CASE WHEN type IN ('lending_out','lending') THEN {$baseExpression} ELSE 0 END) as lending_out")
+            ->selectRaw("SUM(CASE WHEN type = 'lending_in' THEN {$baseExpression} ELSE 0 END) as lending_in")
+            ->selectRaw("SUM(CASE WHEN type = 'lending_repay_in' THEN {$baseExpression} ELSE 0 END) as lending_repay_in")
+            ->selectRaw("SUM(CASE WHEN type = 'lending_repay_out' THEN {$baseExpression} ELSE 0 END) as lending_repay_out")
             ->groupBy('period')
             ->orderBy('period');
 
@@ -412,10 +490,12 @@ class ReportService
             return ['labels' => [], 'datasets' => []];
         }
 
+        $baseExpression = MoneyFormatter::baseAmountExpression('transactions.amount', 'transactions.rate_at_transaction');
+
         $query = Transaction::query()
             ->selectRaw("{$periodExpression} as period")
             ->selectRaw('COALESCE(transaction_categories.name, \'Uncategorized\') as category_name')
-            ->selectRaw('SUM(transactions.amount) as total_amount')
+            ->selectRaw("SUM({$baseExpression}) as total_amount")
             ->leftJoin('transaction_categories', 'transaction_categories.id', '=', 'transactions.category_id')
             ->whereIn('transactions.type', ['income', 'expense'])
             ->whereIn('transactions.category_id', $categoryIds)

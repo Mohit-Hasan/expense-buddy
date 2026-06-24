@@ -2,10 +2,10 @@
 
 @section('title', 'Contacts')
 @section('heading', 'Contacts')
-@section('subheading', 'People and companies for lending and transaction linking')
+@section('subheading', 'People and companies — link to income, expenses, or lending')
 
 @section('actions')
-    <a href="{{ route('lending.people.create') }}" class="btn-primary">
+    <a href="{{ route('contacts.create') }}" class="btn-primary">
         <x-ming-icon name="user.user-add" class="h-4 w-4" />
         Add Contact
     </a>
@@ -13,12 +13,6 @@
 
 @section('content')
     @php use App\Support\MoneyFormatter; @endphp
-
-    <x-section-nav :items="[
-        ['route' => 'lending.overview', 'label' => 'Overview', 'icon' => 'business.safe-box', 'active' => 'lending.overview'],
-        ['route' => 'lending.people.index', 'label' => 'Contacts', 'icon' => 'user.group', 'active' => 'lending.people.*'],
-        ['route' => 'lending.ledger', 'label' => 'Activity Ledger', 'icon' => 'business.chart-bar', 'active' => 'lending.ledger'],
-    ]" />
 
     <div class="grid gap-6 lg:grid-cols-2">
         @foreach ([['title' => 'People', 'subtitle' => 'Individuals', 'items' => $people], ['title' => 'Companies', 'subtitle' => 'Business entities', 'items' => $companies]] as $group)
@@ -33,13 +27,14 @@
                                         <div class="mt-0.5 text-xs text-slate-500">{{ $contact->email ?? $contact->phone ?? 'No contact info' }}</div>
                                     </div>
                                     <div class="shrink-0 text-right">
+                                        <div class="text-xs text-slate-500">Lending balance</div>
                                         <div class="amount amount-neutral">{{ MoneyFormatter::format((string) $contact->current_balance, $baseCurrency) }}</div>
                                         <span class="badge {{ $contact->status === 'active' ? 'badge-income' : 'badge-expense' }} mt-1">{{ ucfirst($contact->status) }}</span>
                                     </div>
                                 </div>
                                 <div class="mt-3 flex flex-wrap gap-2">
-                                    <a href="{{ route('lending.people.edit', $contact->id) }}" class="btn-secondary !px-3 !py-1.5 text-xs">Edit</a>
-                                    <a href="{{ route('lending.ledger', ['contact_id' => $contact->id]) }}" class="btn-secondary !px-3 !py-1.5 text-xs">Ledger</a>
+                                    <a href="{{ route('contacts.show', $contact->id) }}" class="btn-secondary !px-3 !py-1.5 text-xs">Activity</a>
+                                    <a href="{{ route('contacts.edit', $contact->id) }}" class="btn-secondary !px-3 !py-1.5 text-xs">Edit</a>
                                 </div>
                             </div>
                         </div>

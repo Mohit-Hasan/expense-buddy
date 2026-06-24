@@ -76,7 +76,7 @@
                 </div>
 
                 <div id="contact-field-wrap">
-                    <label class="label">Person / Company <span id="contact-hint" class="font-normal text-slate-400">(optional source link)</span></label>
+                    <label class="label">Person / Company <span id="contact-hint" class="font-normal text-slate-400">(optional — for tracking)</span></label>
                     <select name="contact_id" class="input" data-search-select data-placeholder="None selected" data-search-placeholder="Search contacts…">
                         <option value="">None selected</option>
                         @foreach ($contacts as $contact)

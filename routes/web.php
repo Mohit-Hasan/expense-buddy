@@ -83,16 +83,22 @@ Route::middleware(['auth', 'menu.permission'])->group(function (): void {
     Route::post('/payment-methods/{id}/archive', [PaymentMethodController::class, 'archive'])->name('payment-methods.archive');
     Route::post('/payment-methods/{id}/restore', [PaymentMethodController::class, 'restore'])->name('payment-methods.restore');
 
-    Route::redirect('/contacts', '/lending/people');
+    Route::prefix('contacts')->name('contacts.')->group(function (): void {
+        Route::get('/', [ContactController::class, 'index'])->name('index');
+        Route::get('/create', [ContactController::class, 'create'])->name('create');
+        Route::post('/', [ContactController::class, 'store'])->name('store');
+        Route::get('/{id}', [ContactController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [ContactController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [ContactController::class, 'update'])->name('update');
+    });
+
     Route::prefix('lending')->name('lending.')->group(function (): void {
         Route::get('/', [ContactController::class, 'overview'])->name('overview');
         Route::get('/ledger', [ContactController::class, 'ledger'])->name('ledger');
         Route::get('/trend-chart', [ContactController::class, 'trendChart'])->name('trend-chart');
-        Route::get('/people', [ContactController::class, 'index'])->name('people.index');
-        Route::get('/people/create', [ContactController::class, 'create'])->name('people.create');
-        Route::post('/people', [ContactController::class, 'store'])->name('people.store');
-        Route::get('/people/{id}/edit', [ContactController::class, 'edit'])->name('people.edit');
-        Route::put('/people/{id}', [ContactController::class, 'update'])->name('people.update');
+        Route::redirect('/people', '/contacts');
+        Route::redirect('/people/create', '/contacts/create');
+        Route::get('/people/{id}/edit', fn (int $id) => redirect()->route('contacts.edit', $id));
     });
 
     Route::prefix('reports')->name('reports.')->group(function (): void {
