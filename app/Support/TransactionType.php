@@ -57,7 +57,6 @@ final class TransactionType
         return match ($type) {
             'lending', self::LENDING_OUT, self::LENDING_REPAY_OUT => bcadd($running, $amount, 4),
             self::LENDING_IN, self::LENDING_REPAY_IN => bcsub($running, $amount, 4),
-            'income' => bcsub($running, $amount, 4),
             default => $running,
         };
     }

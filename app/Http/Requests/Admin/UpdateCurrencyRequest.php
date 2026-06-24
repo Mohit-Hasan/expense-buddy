@@ -24,7 +24,6 @@ class UpdateCurrencyRequest extends FormRequest
             'code' => ['required', 'string', 'max:10', Rule::unique('currencies', 'code')->ignore($this->route('id'))],
             'symbol' => ['required', 'string', 'max:10'],
             'exchange_rate' => ['required', 'numeric', 'gt:0', 'regex:/^\d+(\.\d{1,4})?$/'],
-            'is_default' => ['sometimes', 'boolean'],
         ];
     }
 }

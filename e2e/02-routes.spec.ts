@@ -16,7 +16,11 @@ test('admin can visit every main feature page', async ({ page }) => {
 
 test('redirect routes resolve', async ({ page }) => {
     await page.goto('/contacts');
-    await expect(page).toHaveURL(/\/lending\/people$/);
+    await expect(page).toHaveURL(/\/contacts$/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Contacts' })).toBeVisible();
+
+    await page.goto('/lending/people');
+    await expect(page).toHaveURL(/\/contacts$/);
 
     await page.goto('/reports/contact-ledger');
     await expect(page).toHaveURL(/\/lending\/ledger$/);

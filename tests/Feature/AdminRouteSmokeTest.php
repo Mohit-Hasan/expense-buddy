@@ -44,9 +44,10 @@ class AdminRouteSmokeTest extends TestCase
             '/lending',
             '/lending/ledger',
             '/lending/trend-chart?period=30d',
-            '/lending/people',
-            '/lending/people/create',
-            '/lending/people/'.$contact->id.'/edit',
+            '/contacts',
+            '/contacts/create',
+            '/contacts/'.$contact->id,
+            '/contacts/'.$contact->id.'/edit',
             '/reports/income-vs-expense',
             '/reports/categorized',
             '/reports/detailed',
@@ -68,9 +69,23 @@ class AdminRouteSmokeTest extends TestCase
     #[Test]
     public function redirect_routes_resolve_for_administrator(): void
     {
+        $contact = Contact::query()->firstOrFail();
+
+        $this->actingAs($this->admin)
+            ->get('/lending/people')
+            ->assertRedirect('/contacts');
+
+        $this->actingAs($this->admin)
+            ->get('/lending/people/create')
+            ->assertRedirect('/contacts/create');
+
+        $this->actingAs($this->admin)
+            ->get('/lending/people/'.$contact->id.'/edit')
+            ->assertRedirect('/contacts/'.$contact->id.'/edit');
+
         $this->actingAs($this->admin)
             ->get('/contacts')
-            ->assertRedirect('/lending/people');
+            ->assertOk();
 
         $this->actingAs($this->admin)
             ->get('/reports/contact-ledger')

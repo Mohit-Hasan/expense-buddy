@@ -103,6 +103,71 @@ class BalanceTrendChartBuilderTest extends TestCase
         $this->assertSame(100.0, $chart['values'][0]);
     }
 
+    #[Test]
+    public function it_builds_period_income_trend_in_base_currency_with_downsampling(): void
+    {
+        Carbon::setTestNow('2026-06-22');
+
+        $contact = $this->createContact();
+        $fixtures = $this->ledgerFixtures();
+
+        for ($day = 0; $day < 200; $day++) {
+            Transaction::query()->create([
+                'account_id' => $fixtures['account']->id,
+                'category_id' => $fixtures['category']->id,
+                'payment_method_id' => $fixtures['paymentMethod']->id,
+                'currency_id' => $fixtures['currency']->id,
+                'contact_id' => $contact->id,
+                'type' => 'income',
+                'amount' => '5.0000',
+                'rate_at_transaction' => '2.0000',
+                'transaction_date' => now()->subDays(200 - $day)->toDateString(),
+            ]);
+        }
+
+        $chart = $this->builder->buildPeriodBaseTrend(
+            Transaction::query()->where('contact_id', $contact->id)->where('type', 'income'),
+            BalanceTrendPeriod::LIFETIME,
+        );
+
+        $this->assertSame(200, $chart['meta']['transaction_count']);
+        $this->assertLessThanOrEqual(BalanceTrendChartBuilder::MAX_POINTS, $chart['meta']['point_count']);
+        $this->assertSame(500.0, round(array_sum($chart['values']), 1));
+        $this->assertLessThan(500.0, end($chart['values']));
+    }
+
+    #[Test]
+    public function it_sums_income_by_day_instead_of_running_cumulative_total(): void
+    {
+        Carbon::setTestNow('2026-06-22');
+
+        $contact = $this->createContact();
+        $fixtures = $this->ledgerFixtures();
+        $today = now()->toDateString();
+        $yesterday = now()->subDay()->toDateString();
+
+        foreach ([$yesterday, $today] as $date) {
+            Transaction::query()->create([
+                'account_id' => $fixtures['account']->id,
+                'category_id' => $fixtures['category']->id,
+                'payment_method_id' => $fixtures['paymentMethod']->id,
+                'currency_id' => $fixtures['currency']->id,
+                'contact_id' => $contact->id,
+                'type' => 'income',
+                'amount' => '100.0000',
+                'rate_at_transaction' => '1.0000',
+                'transaction_date' => $date,
+            ]);
+        }
+
+        $chart = $this->builder->buildPeriodBaseTrend(
+            Transaction::query()->where('contact_id', $contact->id)->where('type', 'income'),
+            BalanceTrendPeriod::LIFETIME,
+        );
+
+        $this->assertSame([100.0, 100.0], $chart['values']);
+    }
+
     private function createContact(): Contact
     {
         return Contact::query()->create([

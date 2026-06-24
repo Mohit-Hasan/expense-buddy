@@ -39,10 +39,6 @@ class TransactionService
 
             $this->accountRepository->updateBalance($dto->accountId, $dto->amount, 'increment');
 
-            if ($dto->contactId !== null) {
-                $this->contactRepository->updateBalance($dto->contactId, $dto->amount, 'decrement');
-            }
-
             return $this->transactionRepository->findWithRelations($transaction->id)
                 ?? $transaction;
         });
@@ -277,10 +273,6 @@ class TransactionService
     private function reverseIncomeEffects(Transaction $transaction, string $amount, int $accountId): void
     {
         $this->accountRepository->updateBalance($accountId, $amount, 'decrement');
-
-        if ($transaction->contact_id !== null) {
-            $this->contactRepository->updateBalance((int) $transaction->contact_id, $amount, 'increment');
-        }
     }
 
     private function reverseExpenseEffects(Transaction $transaction, string $amount, int $accountId): void
@@ -334,10 +326,6 @@ class TransactionService
     private function applyIncomeEffects(TransactionData $dto): void
     {
         $this->accountRepository->updateBalance($dto->accountId, $dto->amount, 'increment');
-
-        if ($dto->contactId !== null) {
-            $this->contactRepository->updateBalance($dto->contactId, $dto->amount, 'decrement');
-        }
     }
 
     private function applyExpenseEffects(TransactionData $dto): void

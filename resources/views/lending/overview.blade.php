@@ -5,7 +5,7 @@
 @section('subheading', 'Track money lent, outstanding balances, and repayments')
 
 @section('actions')
-    <a href="{{ route('lending.people.create') }}" class="btn-primary">
+    <a href="{{ route('contacts.create') }}" class="btn-primary">
         <x-ming-icon name="user.user-add" class="h-4 w-4" />
         Add Contact
     </a>
@@ -16,7 +16,6 @@
 
     <x-section-nav :items="[
         ['route' => 'lending.overview', 'label' => 'Overview', 'icon' => 'business.safe-box', 'active' => 'lending.overview'],
-        ['route' => 'lending.people.index', 'label' => 'Contacts', 'icon' => 'user.group', 'active' => 'lending.people.*'],
         ['route' => 'lending.ledger', 'label' => 'Activity Ledger', 'icon' => 'business.chart-bar', 'active' => 'lending.ledger'],
     ]" />
 

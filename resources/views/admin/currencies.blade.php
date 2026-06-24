@@ -10,7 +10,8 @@
     <x-panel title="How Multi-Currency Works">
         <ul class="list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-400">
             <li>Each account stores balances in its own currency — balances are never auto-converted.</li>
-            <li>Exchange rates express how many units of a currency equal <strong>1 unit of the base currency</strong> (e.g. BDT 110 = 110 BDT per 1 USD).</li>
+            <li>Change the <strong>base currency</strong> under <a href="{{ route('admin.settings') }}" class="text-brand-600 hover:underline">Settings → General</a> (not on this page).</li>
+            <li>Exchange rates express how many units of a foreign currency equal <strong>1 unit of the base currency</strong>.</li>
             <li>Dashboard and reports convert to base for analytics only.</li>
         </ul>
     </x-panel>
@@ -37,10 +38,9 @@
                             <input type="text" name="symbol" value="{{ $currency->symbol }}" class="input" required>
                             <input type="number" name="exchange_rate" step="0.0001" min="0.0001" value="{{ $currency->exchange_rate }}" class="input" {{ $currency->is_default ? 'readonly' : 'required' }}>
                         </div>
-                        <label class="flex items-center gap-2 text-sm">
-                            <input type="checkbox" name="is_default" value="1" @checked($currency->is_default)>
-                            Set as base currency
-                        </label>
+                        @if ($currency->is_default)
+                            <p class="text-xs text-slate-500">This is the current base currency. Change it from <a href="{{ route('admin.settings') }}" class="text-brand-600 hover:underline">Settings → General</a>.</p>
+                        @endif
                         <div class="flex flex-wrap gap-2">
                             <button type="submit" class="btn-primary">Update</button>
                             @if (! $currency->is_default && $currency->accounts_count === 0)
@@ -65,10 +65,7 @@
                 <input type="text" name="code" placeholder="Code (USD)" class="input" required>
                 <input type="text" name="symbol" placeholder="Symbol ($)" class="input" required>
                 <input type="number" name="exchange_rate" step="0.0001" min="0.0001" placeholder="Rate vs base" class="input" required>
-                <label class="flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="is_default" value="1">
-                    Make base currency
-                </label>
+                <p class="text-xs text-slate-500">New currencies are never base. Set the base currency under <a href="{{ route('admin.settings') }}" class="text-brand-600 hover:underline">Settings → General</a>.</p>
                 <button type="submit" class="btn-primary w-full">Create Currency</button>
             </form>
         </x-panel>

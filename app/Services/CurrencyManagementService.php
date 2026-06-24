@@ -21,22 +21,13 @@ class CurrencyManagementService
             throw new InvalidArgumentException('Exchange rate must be greater than zero.');
         }
 
-        $isDefault = ! empty($data['is_default']);
-
-        return DB::transaction(function () use ($data, $exchangeRate, $isDefault): Currency {
-            if ($isDefault) {
-                Currency::query()->update(['is_default' => false]);
-                $exchangeRate = '1.0000';
-            }
-
-            return Currency::query()->create([
+        return Currency::query()->create([
                 'name' => (string) $data['name'],
                 'code' => strtoupper((string) $data['code']),
                 'symbol' => (string) $data['symbol'],
                 'exchange_rate' => $exchangeRate,
-                'is_default' => $isDefault,
+                'is_default' => false,
             ]);
-        });
     }
 
     /**
@@ -57,12 +48,6 @@ class CurrencyManagementService
         }
 
         return DB::transaction(function () use ($currency, $data, $exchangeRate): Currency {
-            if (! empty($data['is_default']) && ! $currency->is_default) {
-                Currency::query()->update(['is_default' => false]);
-                $currency->is_default = true;
-                $exchangeRate = '1.0000';
-            }
-
             $currency->fill([
                 'name' => (string) $data['name'],
                 'code' => strtoupper((string) $data['code']),

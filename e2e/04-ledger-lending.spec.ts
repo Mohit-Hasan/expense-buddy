@@ -140,7 +140,7 @@ test.describe.serial('ledger, lending, and balance cross-checks', () => {
 
         await page.goto('/lending/ledger');
         await selectOptionContaining(page, 'select[name="contact_id"]', contactName);
-        await page.getByRole('button', { name: 'Apply' }).click();
+        await page.getByRole('button', { name: 'View Activity' }).click();
 
         const ledgerTable = page.locator('table tbody');
         await expect(ledgerTable.getByText('Loan Out').first()).toBeVisible();
@@ -148,6 +148,8 @@ test.describe.serial('ledger, lending, and balance cross-checks', () => {
         await expect(ledgerTable.getByText('Repayment In').first()).toBeVisible();
         await expect(ledgerTable.getByText('Repayment Out').first()).toBeVisible();
         await expect(ledgerTable.getByText('300.00').first()).toBeVisible();
-        await expect(page.locator('.stat-card').filter({ hasText: 'Outstanding Balance' }).getByText('140.00')).toBeVisible();
+        await expect(
+            page.locator('.stat-card').filter({ hasText: 'Lending Outstanding' }).getByText('140.00'),
+        ).toBeVisible();
     });
 });

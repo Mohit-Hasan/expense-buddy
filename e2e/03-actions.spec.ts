@@ -46,7 +46,7 @@ test('admin can create a category and income transaction', async ({ page }) => {
 });
 
 test('admin can create a lending contact', async ({ page }) => {
-    await page.goto('/lending/people/create');
+    await page.goto('/contacts/create');
     await page.locator('input[name="name"]').fill(`Playwright Contact ${Date.now()}`);
     await page.locator('input[name="email"]').fill(`playwright-${Date.now()}@test.local`);
     await page.getByRole('button', { name: 'Save' }).click();

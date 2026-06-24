@@ -79,6 +79,15 @@ class MenuPermissionRegistry
                 'patterns' => ['payment-methods.*'],
             ],
             [
+                'group' => 'Main Menu',
+                'name' => 'Contacts',
+                'slug' => 'menu.contacts',
+                'route' => 'contacts.index',
+                'active' => 'contacts.*',
+                'icon' => 'user.group',
+                'patterns' => ['contacts.*'],
+            ],
+            [
                 'group' => 'Lending',
                 'name' => 'Lending Overview',
                 'slug' => 'menu.lending.overview',
@@ -86,15 +95,6 @@ class MenuPermissionRegistry
                 'active' => 'lending.overview',
                 'icon' => 'business.safe-box',
                 'patterns' => ['lending.overview'],
-            ],
-            [
-                'group' => 'Lending',
-                'name' => 'Lending Contacts',
-                'slug' => 'menu.lending.contacts',
-                'route' => 'lending.people.index',
-                'active' => 'lending.people.*',
-                'icon' => 'user.group',
-                'patterns' => ['lending.people.*', 'contacts'],
             ],
             [
                 'group' => 'Lending',

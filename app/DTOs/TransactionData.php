@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\DTOs;
 
+use App\Support\TransactionType;
+
 final readonly class TransactionData
 {
     /**
@@ -30,16 +32,18 @@ final readonly class TransactionData
      */
     public static function fromArray(array $data): self
     {
+        $type = (string) $data['type'];
+
         return new self(
             accountId: (int) $data['account_id'],
-            type: (string) $data['type'],
+            type: $type,
             paymentMethodId: (int) $data['payment_method_id'],
             currencyId: (int) $data['currency_id'],
             amount: self::normalizeAmount((string) $data['amount']),
             rateAtTransaction: self::normalizeAmount((string) $data['rate_at_transaction']),
             transactionDate: (string) $data['transaction_date'],
             categoryId: isset($data['category_id']) ? (int) $data['category_id'] : null,
-            contactId: isset($data['contact_id']) ? (int) $data['contact_id'] : null,
+            contactId: ! empty($data['contact_id']) ? (int) $data['contact_id'] : null,
             reference: isset($data['reference']) ? (string) $data['reference'] : null,
             description: isset($data['description']) ? (string) $data['description'] : null,
             attachment: isset($data['attachment']) ? (string) $data['attachment'] : null,

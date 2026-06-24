@@ -5,20 +5,14 @@
 @section('subheading', $contact->name)
 
 @section('actions')
-    <a href="{{ route('lending.people.index') }}" class="btn-secondary">Back</a>
-    <a href="{{ route('lending.ledger', ['contact_id' => $contact->id]) }}" class="btn-secondary">Ledger</a>
+    <a href="{{ route('contacts.index') }}" class="btn-secondary">Back</a>
+    <a href="{{ route('contacts.show', $contact->id) }}" class="btn-secondary">Activity</a>
 @endsection
 
 @section('content')
-    <x-section-nav :items="[
-        ['route' => 'lending.overview', 'label' => 'Overview', 'icon' => 'business.safe-box', 'active' => 'lending.overview'],
-        ['route' => 'lending.people.index', 'label' => 'Contacts', 'icon' => 'user.group', 'active' => 'lending.people.*'],
-        ['route' => 'lending.ledger', 'label' => 'Activity Ledger', 'icon' => 'business.chart-bar', 'active' => 'lending.ledger'],
-    ]" />
-
     <div class="mx-auto max-w-2xl">
         <x-panel title="Update Contact">
-            <form method="POST" action="{{ route('lending.people.update', $contact->id) }}" class="space-y-4">
+            <form method="POST" action="{{ route('contacts.update', $contact->id) }}" class="space-y-4">
                 @csrf
                 @method('PUT')
                 <div>
@@ -44,7 +38,7 @@
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="submit" class="btn-primary">Update</button>
-                    <a href="{{ route('lending.people.index') }}" class="btn-secondary">Cancel</a>
+                    <a href="{{ route('contacts.index') }}" class="btn-secondary">Cancel</a>
                 </div>
             </form>
         </x-panel>

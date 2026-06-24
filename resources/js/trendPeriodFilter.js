@@ -10,12 +10,16 @@ function formatTrendMeta(meta) {
     return `${points} chart ${meta.point_count === 1 ? 'point' : 'points'} from ${txns} ${meta.transaction_count === 1 ? 'transaction' : 'transactions'}${grouped}`;
 }
 
-function buildTrendUrl(endpoint, period, contactId) {
+function buildTrendUrl(endpoint, period, contactId, metric) {
     const url = new URL(endpoint, window.location.origin);
     url.searchParams.set('period', period);
 
     if (contactId) {
         url.searchParams.set('contact_id', contactId);
+    }
+
+    if (metric && metric !== 'lending') {
+        url.searchParams.set('metric', metric);
     }
 
     return url;
@@ -57,8 +61,9 @@ function setActivePeriodButton(root, period) {
     });
 }
 
-function createTrendChart(canvas, chartData, label) {
+function createTrendChart(canvas, chartData, label, colorKey) {
     const colors = window.LedgerCharts.chartColors();
+    const lineColor = colors[colorKey] ?? colors.palette[1];
 
     return new window.Chart(canvas, {
         type: 'line',
@@ -67,8 +72,8 @@ function createTrendChart(canvas, chartData, label) {
             datasets: [{
                 label,
                 data: chartData.values,
-                borderColor: colors.income,
-                backgroundColor: `${colors.income}22`,
+                borderColor: lineColor,
+                backgroundColor: `${lineColor}22`,
                 fill: true,
                 tension: 0.35,
                 pointRadius: 4,
@@ -91,6 +96,8 @@ function initBalanceTrendPanel(root) {
     const endpoint = root.dataset.endpoint;
     const contactId = root.dataset.contactId || '';
     const label = root.dataset.label || 'Outstanding';
+    const metric = root.dataset.metric || 'lending';
+    const colorKey = root.dataset.color || 'income';
     const initialNode = root.querySelector('[data-trend-initial]');
     const loading = root.querySelector('[data-trend-loading]');
     const meta = root.querySelector('[data-trend-meta]');
@@ -116,7 +123,7 @@ function initBalanceTrendPanel(root) {
         }
 
         if (!chart) {
-            chart = createTrendChart(canvas, chartData, label);
+            chart = createTrendChart(canvas, chartData, label, colorKey);
             return;
         }
 
@@ -157,7 +164,7 @@ function initBalanceTrendPanel(root) {
         });
 
         try {
-            const response = await fetch(buildTrendUrl(endpoint, period, contactId), {
+            const response = await fetch(buildTrendUrl(endpoint, period, contactId, metric), {
                 headers: {
                     Accept: 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',

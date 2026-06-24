@@ -5,19 +5,13 @@
 @section('subheading', 'Register a person or company')
 
 @section('actions')
-    <a href="{{ route('lending.people.index') }}" class="btn-secondary">Back</a>
+    <a href="{{ route('contacts.index') }}" class="btn-secondary">Back</a>
 @endsection
 
 @section('content')
-    <x-section-nav :items="[
-        ['route' => 'lending.overview', 'label' => 'Overview', 'icon' => 'business.safe-box', 'active' => 'lending.overview'],
-        ['route' => 'lending.people.index', 'label' => 'Contacts', 'icon' => 'user.group', 'active' => 'lending.people.*'],
-        ['route' => 'lending.ledger', 'label' => 'Activity Ledger', 'icon' => 'business.chart-bar', 'active' => 'lending.ledger'],
-    ]" />
-
     <div class="mx-auto max-w-2xl">
         <x-panel title="Contact Details">
-            <form method="POST" action="{{ route('lending.people.store') }}" class="space-y-4">
+            <form method="POST" action="{{ route('contacts.store') }}" class="space-y-4">
                 @csrf
                 <div>
                     <label class="label">Type</label>
@@ -45,7 +39,7 @@
                 </div>
                 <div class="flex gap-3 pt-2">
                     <button type="submit" class="btn-primary">Save</button>
-                    <a href="{{ route('lending.people.index') }}" class="btn-secondary">Cancel</a>
+                    <a href="{{ route('contacts.index') }}" class="btn-secondary">Cancel</a>
                 </div>
             </form>
         </x-panel>
